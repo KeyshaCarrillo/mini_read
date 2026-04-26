@@ -1,6 +1,8 @@
 import 'dart:ui';
 
+
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
@@ -73,6 +75,13 @@ class HomePage extends StatelessWidget {
     Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
   }
 
+  static const Color _surface = Color(0xFF171F33);
+  static const Color _primary = Color(0xFFD2BBFF);
+  static const Color _primaryContainer = Color(0xFF7C3AED);
+  static const Color _tertiary = Color(0xFFFFAFD3);
+  static const Color _onSurfaceVariant = Color(0xFFCCC3D8);
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,6 +95,7 @@ class HomePage extends StatelessWidget {
               slivers: [
                 SliverToBoxAdapter(
                   child: Padding(
+
                     padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
                     child: Row(
                       children: [
@@ -106,6 +116,103 @@ class HomePage extends StatelessWidget {
                           icon: Icons.settings_rounded,
                           onTap: () => _showLogoutFlow(context),
                           tooltip: 'Cerrar sesión',
+
+                    padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(color: _primary, width: 1.8),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x337C3AED),
+                                blurRadius: 12,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(30),
+                            child: Image.network(
+                              'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Lumina',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontFamily: 'Newsreader',
+                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.4,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {},
+                          icon: const Icon(Icons.search_rounded, color: _primary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 6, 20, 14),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'WELCOME BACK,',
+                                style: TextStyle(
+                                  color: _primary,
+                                  fontSize: 11,
+                                  letterSpacing: 1.3,
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Julio Cortázar',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 32,
+                                  fontFamily: 'Newsreader',
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        _GlassPill(
+                          child: Row(
+                            children: const [
+                              Icon(Icons.auto_awesome_rounded,
+                                  color: _tertiary, size: 16),
+                              SizedBox(width: 8),
+                              Text(
+                                'Adult Mode Active',
+                                style: TextStyle(
+                                  color: _onSurfaceVariant,
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -130,21 +237,32 @@ class HomePage extends StatelessWidget {
                       const [
                         _CategoryCard(
                           title: 'Novelas',
+
                           subtitle: '142 historias',
+
+                          subtitle: '142 Stories',
+
                           image:
                               'https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=1200',
                           overlay: Color(0x7A62259B),
                         ),
                         _CategoryCard(
                           title: 'Cuentos',
+
                           subtitle: '85 historias',
+
+                          subtitle: '85 Stories',
                           image:
                               'https://images.unsplash.com/photo-1455885666463-9befe0f7e9f8?w=1200',
                           overlay: Color(0x9A2D145A),
                         ),
                         _CategoryCard(
                           title: 'Poemas',
+
                           subtitle: '210 versos',
+
+                          subtitle: '210 Verses',
+
                           image:
                               'https://images.unsplash.com/photo-1513001900722-370f803f498d?w=1200',
                           overlay: Color(0x66AE397B),
@@ -170,6 +288,7 @@ class HomePage extends StatelessWidget {
             BoxShadow(color: Color(0x667C3AED), blurRadius: 24),
           ],
         ),
+
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -177,6 +296,14 @@ class HomePage extends StatelessWidget {
             _NavItem(icon: Icons.menu_book_rounded, label: 'Biblioteca'),
             _NavItem(icon: Icons.auto_stories_rounded, label: 'Descubrir'),
             _NavItem(icon: Icons.person_rounded, label: 'Perfil'),
+
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: const [
+            _NavItem(icon: Icons.home_rounded, label: 'Home', active: true),
+            _NavItem(icon: Icons.menu_book_rounded, label: 'Library'),
+            _NavItem(icon: Icons.auto_stories_rounded, label: 'Discover'),
+            _NavItem(icon: Icons.person_rounded, label: 'Profile'),
           ],
         ),
       ),
@@ -217,6 +344,7 @@ class _BackgroundGlow extends StatelessWidget {
             ),
           ),
         ),
+
         Positioned(
           bottom: -80,
           right: -80,
@@ -278,6 +406,12 @@ class _GlassIconButton extends StatelessWidget {
   }
 }
 
+      ],
+    );
+  }
+}
+
+
 class _HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -316,7 +450,11 @@ class _HeroCard extends StatelessWidget {
                       border: Border.all(color: const Color(0x66D2BBFF)),
                     ),
                     child: const Text(
+
                       'DESTACADO',
+
+                      'STAFF PICK',
+
                       style: TextStyle(
                         color: Color(0xFFD2BBFF),
                         fontSize: 11,
@@ -327,7 +465,11 @@ class _HeroCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   const Text(
+
                     'La biblioteca\nque susurra',
+
+                    'The Whispering Library\nof Alexandria',
+
                     style: TextStyle(
                       color: Colors.white,
                       height: 1.05,
@@ -338,8 +480,13 @@ class _HeroCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   const Text(
+
                     'Descubre secretos enterrados bajo la arena del tiempo. '
                     'Una experiencia inmersiva entre pasillos perdidos de sabiduría.',
+
+                    'Discover the secrets buried beneath the sands of time. '
+                    'An immersive journey through lost corridors of wisdom.',
+
                     style: TextStyle(
                       color: Color(0xFFCCC3D8),
                       fontFamily: 'Inter',
@@ -352,9 +499,13 @@ class _HeroCard extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
+
                           horizontal: 22,
                           vertical: 14,
                         ),
+
+                            horizontal: 22, vertical: 14),
+
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color(0xFF7C3AED), Color(0xFFE11DFF)],
@@ -367,7 +518,11 @@ class _HeroCard extends StatelessWidget {
                         child: const Row(
                           children: [
                             Text(
+
                               'Leer ahora',
+
+                              'Read Now',
+
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
@@ -379,8 +534,12 @@ class _HeroCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
+
                       const _GlassPill(
                         child: Padding(
+
+                      _GlassPill(
+
                           padding: EdgeInsets.all(12),
                           child: Icon(Icons.bookmark_rounded, color: Colors.white),
                         ),
@@ -389,7 +548,11 @@ class _HeroCard extends StatelessWidget {
                   ),
                 ],
               ),
+
             ),
+
+            )
+
           ],
         ),
       ),
@@ -501,9 +664,14 @@ class _NavItem extends StatelessWidget {
         width: 56,
         height: 56,
         decoration: BoxDecoration(
+
           gradient: const LinearGradient(
             colors: [Color(0xFF7C3AED), Color(0xFFE11DFF)],
           ),
+
+          gradient:
+              const LinearGradient(colors: [Color(0xFF7C3AED), Color(0xFFE11DFF)]),
+
           borderRadius: BorderRadius.circular(30),
           boxShadow: const [
             BoxShadow(color: Color(0x997C3AED), blurRadius: 14),
