@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "404429072054",
+    "project_id": "readlevelproject-6e5d3",
+    "storage_bucket": "readlevelproject-6e5d3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:404429072054:android:3d0aeb2baadc819f076817",
+        "android_client_info": {
+          "package_name": "com.example.mini_read"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbYHe9gogXdKCZaduy4teQon_lxIrJf4U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
