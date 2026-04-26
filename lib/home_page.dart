@@ -1,0 +1,549 @@
+import 'dart:ui';
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  static const Color _background = Color(0xFF0B1326);
+  static const Color _primary = Color(0xFFD2BBFF);
+  static const Color _tertiary = Color(0xFFFFAFD3);
+
+  Future<void> _showLogoutFlow(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xCC171F33),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            'Cerrar sesión',
+            style: TextStyle(
+              color: Colors.white,
+              fontFamily: 'Newsreader',
+              fontWeight: FontWeight.w700,
+              fontSize: 28,
+            ),
+          ),
+          content: const Text(
+            '¿Seguro que deseas cerrar sesión?',
+            style: TextStyle(color: Color(0xFFCCC3D8)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: Color(0xFFCCC3D8)),
+              ),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF7C3AED), Color(0xFFE11DFF)],
+                ),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+                child: const Text(
+                  'Cerrar sesión',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true || !context.mounted) return;
+
+    await FirebaseAuth.instance.signOut();
+    if (!context.mounted) return;
+
+    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _background,
+      body: Stack(
+        children: [
+          const _BackgroundGlow(),
+          SafeArea(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Lectura',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 36,
+                              fontFamily: 'Newsreader',
+                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ),
+                        _GlassIconButton(
+                          icon: Icons.settings_rounded,
+                          onTap: () => _showLogoutFlow(context),
+                          tooltip: 'Cerrar sesión',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _HeroCard(),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+                  sliver: SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 1,
+                      mainAxisSpacing: 14,
+                      crossAxisSpacing: 14,
+                      childAspectRatio: 1.9,
+                    ),
+                    delegate: SliverChildListDelegate(
+                      const [
+                        _CategoryCard(
+                          title: 'Novelas',
+                          subtitle: '142 historias',
+                          image:
+                              'https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=1200',
+                          overlay: Color(0x7A62259B),
+                        ),
+                        _CategoryCard(
+                          title: 'Cuentos',
+                          subtitle: '85 historias',
+                          image:
+                              'https://images.unsplash.com/photo-1455885666463-9befe0f7e9f8?w=1200',
+                          overlay: Color(0x9A2D145A),
+                        ),
+                        _CategoryCard(
+                          title: 'Poemas',
+                          subtitle: '210 versos',
+                          image:
+                              'https://images.unsplash.com/photo-1513001900722-370f803f498d?w=1200',
+                          overlay: Color(0x66AE397B),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 120)),
+              ],
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 22),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0x4D2E1065),
+          borderRadius: BorderRadius.circular(50),
+          border: Border.all(color: Colors.white12),
+          boxShadow: const [
+            BoxShadow(color: Color(0x667C3AED), blurRadius: 24),
+          ],
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _NavItem(icon: Icons.home_rounded, label: 'Inicio', active: true),
+            _NavItem(icon: Icons.menu_book_rounded, label: 'Biblioteca'),
+            _NavItem(icon: Icons.auto_stories_rounded, label: 'Descubrir'),
+            _NavItem(icon: Icons.person_rounded, label: 'Perfil'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BackgroundGlow extends StatelessWidget {
+  const _BackgroundGlow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF0B1326), Color(0xFF141C33), Color(0xFF0B1326)],
+            ),
+          ),
+        ),
+        Positioned(
+          top: -120,
+          left: -80,
+          child: Container(
+            width: 290,
+            height: 290,
+            decoration: BoxDecoration(
+              color: const Color(0x557C3AED),
+              borderRadius: BorderRadius.circular(180),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: const SizedBox.expand(),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: -80,
+          right: -80,
+          child: Container(
+            width: 320,
+            height: 320,
+            decoration: BoxDecoration(
+              color: const Color(0x44AE397B),
+              borderRadius: BorderRadius.circular(190),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: const SizedBox.expand(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _GlassIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final String tooltip;
+
+  const _GlassIconButton({
+    required this.icon,
+    required this.onTap,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(50),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Material(
+          color: const Color(0x66222A3D),
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(50),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: Tooltip(
+                message: tooltip,
+                child: Icon(icon, color: _primary),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: SizedBox(
+        height: 460,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.network(
+              'https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?w=1400',
+              fit: BoxFit.cover,
+            ),
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Color(0xCC0B1326), Color(0xFF0B1326)],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0x337C3AED),
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(color: const Color(0x66D2BBFF)),
+                    ),
+                    child: const Text(
+                      'DESTACADO',
+                      style: TextStyle(
+                        color: Color(0xFFD2BBFF),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'La biblioteca\nque susurra',
+                    style: TextStyle(
+                      color: Colors.white,
+                      height: 1.05,
+                      fontSize: 42,
+                      fontFamily: 'Newsreader',
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Descubre secretos enterrados bajo la arena del tiempo. '
+                    'Una experiencia inmersiva entre pasillos perdidos de sabiduría.',
+                    style: TextStyle(
+                      color: Color(0xFFCCC3D8),
+                      fontFamily: 'Inter',
+                      fontSize: 16,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 22,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF7C3AED), Color(0xFFE11DFF)],
+                          ),
+                          borderRadius: BorderRadius.circular(40),
+                          boxShadow: const [
+                            BoxShadow(color: Color(0x667C3AED), blurRadius: 18),
+                          ],
+                        ),
+                        child: const Row(
+                          children: [
+                            Text(
+                              'Leer ahora',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(Icons.menu_book_rounded, color: Colors.white),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const _GlassPill(
+                        child: Padding(
+                          padding: EdgeInsets.all(12),
+                          child: Icon(Icons.bookmark_rounded, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String image;
+  final Color overlay;
+
+  const _CategoryCard({
+    required this.title,
+    required this.subtitle,
+    required this.image,
+    required this.overlay,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.network(image, fit: BoxFit.cover),
+          Container(color: overlay),
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Color(0xCC0B1326)],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontFamily: 'Newsreader',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: Color(0xFFCCC3D8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GlassPill extends StatelessWidget {
+  final Widget child;
+
+  const _GlassPill({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(40),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0x66222A3D),
+            borderRadius: BorderRadius.circular(40),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool active;
+
+  const _NavItem({required this.icon, required this.label, this.active = false});
+
+  @override
+  Widget build(BuildContext context) {
+    if (active) {
+      return Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF7C3AED), Color(0xFFE11DFF)],
+          ),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: const [
+            BoxShadow(color: Color(0x997C3AED), blurRadius: 14),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 19),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 9,
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                letterSpacing: .8,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Opacity(
+      opacity: .7,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: const Color(0xFFA9AFC6), size: 22),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 9,
+              color: Color(0xFFB2B8CC),
+              fontWeight: FontWeight.w700,
+              letterSpacing: .8,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
