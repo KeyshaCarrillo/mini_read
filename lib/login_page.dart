@@ -186,7 +186,11 @@ class _LoginPageState extends State<LoginPage> {
                               _GradientButton(
                                 label: _loading
                                     ? 'Signing in...'
+
+                                    : 'Continuar a Lectura',
+
                                     : 'Continue to Lumina',
+
                                 onTap: _loading ? null : _login,
                               ),
                               const SizedBox(height: 24),
@@ -232,7 +236,11 @@ class _LoginPageState extends State<LoginPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
+
+                        '© 2024 Lectura',
+
                         '© 2024 Lumina Literary',
+
                         style: TextStyle(color: Color(0x99CCC3D8), fontSize: 11),
                       ),
                     ],
@@ -264,7 +272,11 @@ class _TopBar extends StatelessWidget {
       child: const Row(
         children: [
           Text(
+
+            'Lectura',
+
             'Lumina',
+
             style: TextStyle(
               color: Colors.white,
               fontFamily: 'Newsreader',

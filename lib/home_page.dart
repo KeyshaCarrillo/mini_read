@@ -1,16 +1,86 @@
 import 'dart:ui';
 
+
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   static const Color _background = Color(0xFF0B1326);
+  static const Color _primary = Color(0xFFD2BBFF);
+  static const Color _tertiary = Color(0xFFFFAFD3);
+
+  Future<void> _showLogoutFlow(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xCC171F33),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            'Cerrar sesión',
+            style: TextStyle(
+              color: Colors.white,
+              fontFamily: 'Newsreader',
+              fontWeight: FontWeight.w700,
+              fontSize: 28,
+            ),
+          ),
+          content: const Text(
+            '¿Seguro que deseas cerrar sesión?',
+            style: TextStyle(color: Color(0xFFCCC3D8)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: Color(0xFFCCC3D8)),
+              ),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF7C3AED), Color(0xFFE11DFF)],
+                ),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+                child: const Text(
+                  'Cerrar sesión',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true || !context.mounted) return;
+
+    await FirebaseAuth.instance.signOut();
+    if (!context.mounted) return;
+
+    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+  }
+
   static const Color _surface = Color(0xFF171F33);
   static const Color _primary = Color(0xFFD2BBFF);
   static const Color _primaryContainer = Color(0xFF7C3AED);
   static const Color _tertiary = Color(0xFFFFAFD3);
   static const Color _onSurfaceVariant = Color(0xFFCCC3D8);
+
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +95,28 @@ class HomePage extends StatelessWidget {
               slivers: [
                 SliverToBoxAdapter(
                   child: Padding(
+
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Lectura',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 36,
+                              fontFamily: 'Newsreader',
+                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ),
+                        _GlassIconButton(
+                          icon: Icons.settings_rounded,
+                          onTap: () => _showLogoutFlow(context),
+                          tooltip: 'Cerrar sesión',
+
                     padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
                     child: Row(
                       children: [
@@ -145,13 +237,20 @@ class HomePage extends StatelessWidget {
                       const [
                         _CategoryCard(
                           title: 'Novelas',
+
+                          subtitle: '142 historias',
+
                           subtitle: '142 Stories',
+
                           image:
                               'https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=1200',
                           overlay: Color(0x7A62259B),
                         ),
                         _CategoryCard(
                           title: 'Cuentos',
+
+                          subtitle: '85 historias',
+
                           subtitle: '85 Stories',
                           image:
                               'https://images.unsplash.com/photo-1455885666463-9befe0f7e9f8?w=1200',
@@ -159,7 +258,11 @@ class HomePage extends StatelessWidget {
                         ),
                         _CategoryCard(
                           title: 'Poemas',
+
+                          subtitle: '210 versos',
+
                           subtitle: '210 Verses',
+
                           image:
                               'https://images.unsplash.com/photo-1513001900722-370f803f498d?w=1200',
                           overlay: Color(0x66AE397B),
@@ -185,6 +288,15 @@ class HomePage extends StatelessWidget {
             BoxShadow(color: Color(0x667C3AED), blurRadius: 24),
           ],
         ),
+
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _NavItem(icon: Icons.home_rounded, label: 'Inicio', active: true),
+            _NavItem(icon: Icons.menu_book_rounded, label: 'Biblioteca'),
+            _NavItem(icon: Icons.auto_stories_rounded, label: 'Descubrir'),
+            _NavItem(icon: Icons.person_rounded, label: 'Perfil'),
+
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: const [
@@ -232,10 +344,73 @@ class _BackgroundGlow extends StatelessWidget {
             ),
           ),
         ),
+
+        Positioned(
+          bottom: -80,
+          right: -80,
+          child: Container(
+            width: 320,
+            height: 320,
+            decoration: BoxDecoration(
+              color: const Color(0x44AE397B),
+              borderRadius: BorderRadius.circular(190),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: const SizedBox.expand(),
+            ),
+          ),
+        ),
       ],
     );
   }
 }
+
+class _GlassIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final String tooltip;
+
+  const _GlassIconButton({
+    required this.icon,
+    required this.onTap,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(50),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Material(
+          color: const Color(0x66222A3D),
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(50),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: Tooltip(
+                message: tooltip,
+                child: Icon(icon, color: _primary),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+      ],
+    );
+  }
+}
+
 
 class _HeroCard extends StatelessWidget {
   @override
@@ -275,7 +450,11 @@ class _HeroCard extends StatelessWidget {
                       border: Border.all(color: const Color(0x66D2BBFF)),
                     ),
                     child: const Text(
+
+                      'DESTACADO',
+
                       'STAFF PICK',
+
                       style: TextStyle(
                         color: Color(0xFFD2BBFF),
                         fontSize: 11,
@@ -286,7 +465,11 @@ class _HeroCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   const Text(
+
+                    'La biblioteca\nque susurra',
+
                     'The Whispering Library\nof Alexandria',
+
                     style: TextStyle(
                       color: Colors.white,
                       height: 1.05,
@@ -297,8 +480,13 @@ class _HeroCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   const Text(
+
+                    'Descubre secretos enterrados bajo la arena del tiempo. '
+                    'Una experiencia inmersiva entre pasillos perdidos de sabiduría.',
+
                     'Discover the secrets buried beneath the sands of time. '
                     'An immersive journey through lost corridors of wisdom.',
+
                     style: TextStyle(
                       color: Color(0xFFCCC3D8),
                       fontFamily: 'Inter',
@@ -311,7 +499,13 @@ class _HeroCard extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
+
+                          horizontal: 22,
+                          vertical: 14,
+                        ),
+
                             horizontal: 22, vertical: 14),
+
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color(0xFF7C3AED), Color(0xFFE11DFF)],
@@ -324,7 +518,11 @@ class _HeroCard extends StatelessWidget {
                         child: const Row(
                           children: [
                             Text(
+
+                              'Leer ahora',
+
                               'Read Now',
+
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
@@ -336,8 +534,12 @@ class _HeroCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
+
+                      const _GlassPill(
+                        child: Padding(
+
                       _GlassPill(
-                        child: const Padding(
+
                           padding: EdgeInsets.all(12),
                           child: Icon(Icons.bookmark_rounded, color: Colors.white),
                         ),
@@ -346,7 +548,11 @@ class _HeroCard extends StatelessWidget {
                   ),
                 ],
               ),
+
+            ),
+
             )
+
           ],
         ),
       ),
@@ -458,8 +664,14 @@ class _NavItem extends StatelessWidget {
         width: 56,
         height: 56,
         decoration: BoxDecoration(
+
+          gradient: const LinearGradient(
+            colors: [Color(0xFF7C3AED), Color(0xFFE11DFF)],
+          ),
+
           gradient:
               const LinearGradient(colors: [Color(0xFF7C3AED), Color(0xFFE11DFF)]),
+
           borderRadius: BorderRadius.circular(30),
           boxShadow: const [
             BoxShadow(color: Color(0x997C3AED), blurRadius: 14),
