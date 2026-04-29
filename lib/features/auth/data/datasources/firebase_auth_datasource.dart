@@ -1,4 +1,4 @@
-import '../models/user_model.dart';
+import 'package:mini_read/features/auth/data/models/user_model.dart';
 
 abstract class FirebaseAuthDataSource {
   Future<UserModel> login({required String email, required String password});

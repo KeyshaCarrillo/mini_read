@@ -1,6 +1,6 @@
-import '../../domain/entities/user.dart';
-import '../../domain/repositories/auth_repository.dart';
-import '../datasources/firebase_auth_datasource.dart';
+import 'package:mini_read/features/auth/domain/entities/user.dart';
+import 'package:mini_read/features/auth/domain/repositories/auth_repository.dart';
+import 'package:mini_read/features/auth/data/datasources/firebase_auth_datasource.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final FirebaseAuthDataSource dataSource;

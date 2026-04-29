@@ -1,6 +1,6 @@
-import '../../domain/usecases/login_user.dart';
-import '../../domain/usecases/register_user.dart';
-import '../../domain/entities/user.dart';
+import 'package:mini_read/features/auth/domain/usecases/login_user.dart';
+import 'package:mini_read/features/auth/domain/usecases/register_user.dart';
+import 'package:mini_read/features/auth/domain/entities/user.dart';
 
 class AuthController {
   final LoginUser loginUser;

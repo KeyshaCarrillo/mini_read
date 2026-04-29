@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../controllers/auth_controller.dart';
+import 'package:mini_read/features/auth/presentation/controllers/auth_controller.dart';
 
 class RegisterPage extends StatefulWidget {
   final AuthController controller;
