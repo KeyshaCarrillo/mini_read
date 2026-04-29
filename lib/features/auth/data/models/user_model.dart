@@ -1,4 +1,4 @@
-import '../../domain/entities/user.dart';
+import 'package:mini_read/features/auth/domain/entities/user.dart';
 
 class UserModel extends User {
   UserModel({required super.id, required super.email});

@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart' as fb;
-import '../models/user_model.dart';
-import 'firebase_auth_datasource.dart';
+import 'package:mini_read/features/auth/data/models/user_model.dart';
+import 'package:mini_read/features/auth/data/datasources/firebase_auth_datasource.dart';
 
 class FirebaseAuthDataSourceImpl implements FirebaseAuthDataSource {
   final fb.FirebaseAuth _firebaseAuth;
