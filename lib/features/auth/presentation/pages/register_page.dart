@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+
+import '../../../../app/app_theme.dart';
 import '../controllers/auth_controller.dart';
 
 class RegisterPage extends StatefulWidget {
   final AuthController controller;
+
   const RegisterPage({super.key, required this.controller});
 
   @override
@@ -11,66 +14,147 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-  String _email = '';
-  String _password = '';
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmController = TextEditingController();
   String? _error;
   bool _loading = false;
 
-  void _register() async {
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() {
       _loading = true;
       _error = null;
     });
+
     try {
-      await widget.controller.register(_email, _password);
-      // Navega a la siguiente pantalla
+      await widget.controller.register(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(context, '/profiles', (route) => false);
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-      });
+      setState(() => _error = _cleanError(e));
     } finally {
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) setState(() => _loading = false);
     }
+  }
+
+  String _cleanError(Object error) {
+    final message = error.toString().replaceFirst('Exception:', '').trim();
+    return message.isEmpty ? 'No pudimos crear la cuenta.' : message;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Registro')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Email'),
-                onChanged: (v) => _email = v,
-                validator: (v) =>
-                    v != null && v.contains('@') ? null : 'Email inválido',
-              ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Contraseña'),
-                obscureText: true,
-                onChanged: (v) => _password = v,
-                validator: (v) =>
-                    v != null && v.length >= 6 ? null : 'Mínimo 6 caracteres',
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 8),
-                Text(_error!, style: const TextStyle(color: Colors.red)),
-              ],
-              const SizedBox(height: 16),
-              _loading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _register,
-                      child: const Text('Registrarse'),
+      appBar: AppBar(title: const Text('Crear cuenta')),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 430),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Tu biblioteca empieza aqui',
+                      style: TextStyle(
+                        color: AppTheme.ink,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        height: 1.05,
+                      ),
                     ),
-            ],
+                    const SizedBox(height: 8),
+                    Text(
+                      'Luego conectaremos perfiles, monedas y premium a Firebase.',
+                      style: TextStyle(
+                        color: AppTheme.ink.withValues(alpha: 0.68),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.mail_rounded),
+                      ),
+                      validator: (value) {
+                        final email = value?.trim() ?? '';
+                        return email.contains('@')
+                            ? null
+                            : 'Escribe un email valido';
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Contrasena',
+                        prefixIcon: Icon(Icons.lock_rounded),
+                      ),
+                      validator: (value) {
+                        final password = value ?? '';
+                        return password.length >= 6
+                            ? null
+                            : 'Minimo 6 caracteres';
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _confirmController,
+                      obscureText: true,
+                      onFieldSubmitted: (_) => _register(),
+                      decoration: const InputDecoration(
+                        labelText: 'Confirmar contrasena',
+                        prefixIcon: Icon(Icons.verified_user_rounded),
+                      ),
+                      validator: (value) {
+                        return value == _passwordController.text
+                            ? null
+                            : 'Las contrasenas no coinciden';
+                      },
+                    ),
+                    if (_error != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        _error!,
+                        style: const TextStyle(
+                          color: AppTheme.coral,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 22),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: _loading ? null : _register,
+                        child: Text(_loading ? 'Creando...' : 'Crear cuenta'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),

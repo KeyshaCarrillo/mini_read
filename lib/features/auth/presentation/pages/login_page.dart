@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+
+import '../../../../app/app_theme.dart';
 import '../controllers/auth_controller.dart';
 
 class LoginPage extends StatefulWidget {
   final AuthController controller;
+
   const LoginPage({super.key, required this.controller});
 
   @override
@@ -11,71 +14,172 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  String _email = '';
-  String _password = '';
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   String? _error;
   bool _loading = false;
+  bool _obscurePassword = true;
 
-  void _login() async {
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() {
       _loading = true;
       _error = null;
     });
+
     try {
-      await widget.controller.login(_email, _password);
+      await widget.controller.login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushNamedAndRemoveUntil(context, '/profiles', (route) => false);
     } catch (e) {
-      setState(() {
-        // Extrae el mensaje de Exception
-        final msg = e is Exception && e.toString().contains(':')
-            ? e.toString().split(':').last.trim()
-            : e.toString();
-        _error = msg;
-      });
+      setState(() => _error = _cleanError(e));
     } finally {
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) setState(() => _loading = false);
     }
+  }
+
+  String _cleanError(Object error) {
+    final message = error.toString().replaceFirst('Exception:', '').trim();
+    return message.isEmpty ? 'No pudimos iniciar sesion.' : message;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Email'),
-                onChanged: (v) => _email = v,
-                validator: (v) =>
-                    v != null && v.contains('@') ? null : 'Email inválido',
-              ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Contraseña'),
-                obscureText: true,
-                onChanged: (v) => _password = v,
-                validator: (v) =>
-                    v != null && v.length >= 6 ? null : 'Mínimo 6 caracteres',
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 8),
-                Text(_error!, style: const TextStyle(color: Colors.red)),
-              ],
-              const SizedBox(height: 16),
-              _loading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _login,
-                      child: const Text('Iniciar sesión'),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 430),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: AppTheme.moss,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-            ],
+                    child: const Icon(
+                      Icons.menu_book_rounded,
+                      color: Colors.white,
+                      size: 36,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  const Text(
+                    'Mini Read',
+                    style: TextStyle(
+                      color: AppTheme.ink,
+                      fontSize: 36,
+                      fontWeight: FontWeight.w900,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Entra a tu biblioteca, perfiles y lectura con IA.',
+                    style: TextStyle(
+                      color: AppTheme.ink.withValues(alpha: 0.68),
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: Icon(Icons.mail_rounded),
+                          ),
+                          validator: (value) {
+                            final email = value?.trim() ?? '';
+                            return email.contains('@')
+                                ? null
+                                : 'Escribe un email valido';
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          onFieldSubmitted: (_) => _login(),
+                          decoration: InputDecoration(
+                            labelText: 'Contrasena',
+                            prefixIcon: const Icon(Icons.lock_rounded),
+                            suffixIcon: IconButton(
+                              tooltip: _obscurePassword
+                                  ? 'Mostrar contrasena'
+                                  : 'Ocultar contrasena',
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off_rounded
+                                    : Icons.visibility_rounded,
+                              ),
+                            ),
+                          ),
+                          validator: (value) {
+                            final password = value ?? '';
+                            return password.length >= 6
+                                ? null
+                                : 'Minimo 6 caracteres';
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      _error!,
+                      style: const TextStyle(
+                        color: AppTheme.coral,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 22),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _loading ? null : _login,
+                      child: Text(_loading ? 'Entrando...' : 'Iniciar sesion'),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: _loading
+                          ? null
+                          : () => Navigator.pushNamed(context, '/register'),
+                      child: const Text('Crear cuenta'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
