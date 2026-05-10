@@ -6,6 +6,7 @@ import '../features/library/domain/entities/book.dart';
 import '../features/library/presentation/controllers/library_controller.dart';
 import '../features/library/presentation/pages/book_detail_page.dart';
 import '../features/library/presentation/pages/library_home_page.dart';
+import '../features/library/presentation/pages/onboarding_preferences_page.dart';
 import '../features/library/presentation/pages/profile_selection_page.dart';
 import '../features/library/presentation/pages/reading_page.dart';
 import 'app_theme.dart';
@@ -33,7 +34,12 @@ class MiniReadApp extends StatelessWidget {
           builder: (_) {
             switch (settings.name) {
               case '/register':
-                return RegisterPage(controller: authController);
+                return RegisterPage(
+                  controller: authController,
+                  libraryController: libraryController,
+                );
+              case '/onboarding':
+                return OnboardingPreferencesPage(controller: libraryController);
               case '/profiles':
                 return ProfileSelectionPage(controller: libraryController);
               case '/home':

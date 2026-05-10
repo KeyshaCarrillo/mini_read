@@ -49,107 +49,132 @@ class _ReadingPageState extends State<ReadingPage> {
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, _) {
-        return Scaffold(
-          backgroundColor: const Color(0xFFF5EFE3),
-          body: SafeArea(
-            child: Stack(
-              children: [
-                PageView.builder(
-                  controller: _pageController,
-                  itemCount: widget.book.pages.length,
-                  onPageChanged: (index) =>
-                      setState(() => _currentIndex = index),
-                  itemBuilder: (context, index) {
-                    final page = widget.book.pages[index];
-                    return AnimatedBuilder(
-                      animation: _pageController,
-                      builder: (context, child) {
-                        double delta = 0;
-                        if (_pageController.position.haveDimensions) {
-                          delta =
-                              (_pageController.page ?? index.toDouble()) -
-                              index;
-                        }
-                        final angle =
-                            delta.clamp(-1.0, 1.0).toDouble() * math.pi / 18;
+        final childMode = widget.controller.activeProfile?.childMode ?? false;
 
-                        return Transform(
-                          alignment: delta > 0
-                              ? Alignment.centerLeft
-                              : Alignment.centerRight,
-                          transform: Matrix4.identity()
-                            ..setEntry(3, 2, 0.001)
-                            ..rotateY(angle),
-                          child: child,
-                        );
-                      },
-                      child: _ReaderPage(book: widget.book, page: page),
-                    );
-                  },
+        return Scaffold(
+          body: SafeArea(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: childMode
+                      ? const [
+                          Color(0xFFFFF0A8),
+                          Color(0xFFFFC0D9),
+                          Color(0xFFB8F3E6),
+                        ]
+                      : const [Color(0xFFF5EFE3), Color(0xFFE8DDCF)],
                 ),
-                Positioned(
-                  left: 12,
-                  top: 12,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FloatingActionButton.small(
-                        heroTag: 'ai-menu',
-                        tooltip: 'Preguntar a la IA',
-                        onPressed: () =>
-                            setState(() => _aiMenuOpen = !_aiMenuOpen),
-                        child: const Icon(Icons.auto_awesome_rounded),
-                      ),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 180),
-                        child: _aiMenuOpen
-                            ? Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _AiMenuButton(
-                                      icon: Icons.sticky_note_2_rounded,
-                                      label: 'Pregunta sobre esta pagina',
-                                      cost: widget.controller.costFor(
-                                        AiQuestionType.page,
-                                      ),
-                                      onTap: () =>
-                                          _openChat(AiQuestionType.page),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _AiMenuButton(
-                                      icon: Icons.question_answer_rounded,
-                                      label: 'Pregunta general',
-                                      cost: widget.controller.costFor(
-                                        AiQuestionType.general,
-                                      ),
-                                      onTap: () =>
-                                          _openChat(AiQuestionType.general),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                    ],
+              ),
+              child: Stack(
+                children: [
+                  if (childMode) const _ReadingCuteBackdrop(),
+                  PageView.builder(
+                    controller: _pageController,
+                    itemCount: widget.book.pages.length,
+                    onPageChanged: (index) =>
+                        setState(() => _currentIndex = index),
+                    itemBuilder: (context, index) {
+                      final page = widget.book.pages[index];
+                      return AnimatedBuilder(
+                        animation: _pageController,
+                        builder: (context, child) {
+                          double delta = 0;
+                          if (_pageController.position.haveDimensions) {
+                            delta =
+                                (_pageController.page ?? index.toDouble()) -
+                                index;
+                          }
+                          final angle =
+                              delta.clamp(-1.0, 1.0).toDouble() * math.pi / 18;
+
+                          return Transform(
+                            alignment: delta > 0
+                                ? Alignment.centerLeft
+                                : Alignment.centerRight,
+                            transform: Matrix4.identity()
+                              ..setEntry(3, 2, 0.001)
+                              ..rotateY(angle),
+                            child: child,
+                          );
+                        },
+                        child: _ReaderPage(
+                          book: widget.book,
+                          page: page,
+                          childMode: childMode,
+                        ),
+                      );
+                    },
                   ),
-                ),
-                Positioned(
-                  right: 12,
-                  top: 12,
-                  child: _ReaderStatus(controller: widget.controller),
-                ),
-                Positioned(
-                  left: 16,
-                  right: 16,
-                  bottom: 12,
-                  child: _PageProgress(
-                    current: _currentIndex + 1,
-                    total: widget.book.pages.length,
+                  Positioned(
+                    left: 12,
+                    top: 12,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        FloatingActionButton.small(
+                          heroTag: 'ai-menu',
+                          tooltip: 'Preguntar a la IA',
+                          backgroundColor: childMode
+                              ? const Color(0xFFFF8FB3)
+                              : null,
+                          onPressed: () =>
+                              setState(() => _aiMenuOpen = !_aiMenuOpen),
+                          child: const Icon(Icons.auto_awesome_rounded),
+                        ),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 180),
+                          child: _aiMenuOpen
+                              ? Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _AiMenuButton(
+                                        icon: Icons.sticky_note_2_rounded,
+                                        label: 'Pregunta sobre esta pagina',
+                                        cost: widget.controller.costFor(
+                                          AiQuestionType.page,
+                                        ),
+                                        onTap: () =>
+                                            _openChat(AiQuestionType.page),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      _AiMenuButton(
+                                        icon: Icons.question_answer_rounded,
+                                        label: 'Pregunta general',
+                                        cost: widget.controller.costFor(
+                                          AiQuestionType.general,
+                                        ),
+                                        onTap: () =>
+                                            _openChat(AiQuestionType.general),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  Positioned(
+                    right: 12,
+                    top: 12,
+                    child: _ReaderStatus(controller: widget.controller),
+                  ),
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 12,
+                    child: _PageProgress(
+                      current: _currentIndex + 1,
+                      total: widget.book.pages.length,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -161,8 +186,13 @@ class _ReadingPageState extends State<ReadingPage> {
 class _ReaderPage extends StatelessWidget {
   final Book book;
   final BookPage page;
+  final bool childMode;
 
-  const _ReaderPage({required this.book, required this.page});
+  const _ReaderPage({
+    required this.book,
+    required this.page,
+    required this.childMode,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -172,8 +202,8 @@ class _ReaderPage extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(18, 82, 18, 64),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: AppTheme.paper,
-          borderRadius: BorderRadius.circular(8),
+          color: childMode ? const Color(0xFFFFFCF4) : AppTheme.paper,
+          borderRadius: BorderRadius.circular(childMode ? 22 : 8),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.12),
@@ -183,7 +213,7 @@ class _ReaderPage extends StatelessWidget {
           ],
         ),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(22, 24, 22, 32),
+          padding: EdgeInsets.fromLTRB(22, childMode ? 28 : 24, 22, 32),
           children: [
             Text(
               book.title,
@@ -193,29 +223,43 @@ class _ReaderPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            Text(
-              page.title,
-              style: const TextStyle(
-                color: AppTheme.ink,
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                height: 1.05,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    page.title,
+                    style: TextStyle(
+                      color: AppTheme.ink,
+                      fontSize: childMode ? 30 : 28,
+                      fontWeight: FontWeight.w900,
+                      height: 1.05,
+                    ),
+                  ),
+                ),
+                if (childMode)
+                  const Icon(
+                    Icons.auto_awesome_rounded,
+                    color: AppTheme.coral,
+                    size: 28,
+                  ),
+              ],
             ),
             if (isVisual) ...[
               const SizedBox(height: 20),
               _IllustrationPanel(
                 color: Color(book.accentColor),
                 label: page.illustration!,
+                childMode: childMode,
               ),
             ],
             const SizedBox(height: 22),
             Text(
               page.body,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.ink,
-                fontSize: 20,
-                height: 1.55,
+                fontSize: childMode ? 21 : 20,
+                height: childMode ? 1.62 : 1.55,
               ),
             ),
           ],
@@ -228,17 +272,22 @@ class _ReaderPage extends StatelessWidget {
 class _IllustrationPanel extends StatelessWidget {
   final Color color;
   final String label;
+  final bool childMode;
 
-  const _IllustrationPanel({required this.color, required this.label});
+  const _IllustrationPanel({
+    required this.color,
+    required this.label,
+    required this.childMode,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 210,
+      height: childMode ? 228 : 210,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(8),
+        color: color.withValues(alpha: childMode ? 0.22 : 0.18),
+        borderRadius: BorderRadius.circular(childMode ? 20 : 8),
         border: Border.all(color: color.withValues(alpha: 0.28)),
       ),
       child: Stack(
@@ -246,9 +295,9 @@ class _IllustrationPanel extends StatelessWidget {
           Align(
             alignment: Alignment.center,
             child: Icon(
-              Icons.landscape_rounded,
+              childMode ? Icons.castle_rounded : Icons.landscape_rounded,
               color: color.withValues(alpha: 0.78),
-              size: 86,
+              size: childMode ? 96 : 86,
             ),
           ),
           Align(
@@ -301,7 +350,7 @@ class _ReaderStatus extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(99),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
@@ -357,6 +406,38 @@ class _PageProgress extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ReadingCuteBackdrop extends StatelessWidget {
+  const _ReadingCuteBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Stack(
+        children: [
+          Positioned(
+            top: 86,
+            right: 34,
+            child: Icon(
+              Icons.star_rounded,
+              color: Colors.white.withValues(alpha: 0.46),
+              size: 74,
+            ),
+          ),
+          Positioned(
+            bottom: 86,
+            left: 24,
+            child: Icon(
+              Icons.palette_rounded,
+              color: AppTheme.coral.withValues(alpha: 0.22),
+              size: 76,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/app_theme.dart';
+import '../../../library/presentation/controllers/library_controller.dart';
 import '../controllers/auth_controller.dart';
 
 class RegisterPage extends StatefulWidget {
   final AuthController controller;
+  final LibraryController libraryController;
 
-  const RegisterPage({super.key, required this.controller});
+  const RegisterPage({
+    super.key,
+    required this.controller,
+    required this.libraryController,
+  });
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
@@ -42,7 +48,11 @@ class _RegisterPageState extends State<RegisterPage> {
         _passwordController.text.trim(),
       );
       if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(context, '/profiles', (route) => false);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/onboarding',
+        (route) => false,
+      );
     } catch (e) {
       setState(() => _error = _cleanError(e));
     } finally {
@@ -70,18 +80,32 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: AppTheme.coral,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: const Icon(
+                        Icons.auto_stories_rounded,
+                        color: Colors.white,
+                        size: 36,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     const Text(
                       'Tu biblioteca empieza aqui',
                       style: TextStyle(
                         color: AppTheme.ink,
-                        fontSize: 30,
+                        fontSize: 32,
                         fontWeight: FontWeight.w900,
-                        height: 1.05,
+                        height: 1.02,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Luego conectaremos perfiles, monedas y premium a Firebase.',
+                      'Crea tu cuenta y despues elegimos edad, gustos y el primer perfil lector.',
                       style: TextStyle(
                         color: AppTheme.ink.withValues(alpha: 0.68),
                       ),
