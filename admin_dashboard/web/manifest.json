@@ -1,0 +1,10 @@
+{
+  "name": "Mini Read Admin Dashboard",
+  "short_name": "Admin Dashboard",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "description": "Enterprise administration dashboard for Mini Read.",
+  "orientation": "landscape-primary"
+}
