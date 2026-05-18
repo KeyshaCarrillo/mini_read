@@ -41,9 +41,10 @@ class _AdminShellState extends State<AdminShell> {
       floatingActionButton: admin.section == AdminSection.users
           ? FloatingActionButton.extended(
               onPressed: () => showAddBookDialog(context),
-              backgroundColor: AppColors.primary,
+              elevation: 10,
+              backgroundColor: const Color(0xFF0A1A8A),
               foregroundColor: Colors.white,
-              icon: const Icon(Icons.add_rounded),
+              icon: const Icon(Icons.auto_stories_rounded),
               label: const Text('Anadir Libro'),
             )
           : null,
