@@ -105,14 +105,20 @@ class BookDetailPage extends StatelessWidget {
                         SizedBox(
                           width: double.infinity,
                           child: FilledButton.icon(
-                            onPressed: () => Navigator.pushNamed(
-                              context,
-                              '/read',
-                              arguments: book,
-                            ),
+                            onPressed: book.pages.isEmpty
+                                ? null
+                                : () => Navigator.pushNamed(
+                                    context,
+                                    '/read',
+                                    arguments: book,
+                                  ),
                             icon: const Icon(Icons.menu_book_rounded),
                             label: Text(
-                              childMode ? 'Abrir cuento' : 'Empezar lectura',
+                              book.pages.isEmpty
+                                  ? 'Libro sin paginas'
+                                  : childMode
+                                  ? 'Abrir cuento'
+                                  : 'Empezar lectura',
                             ),
                           ),
                         ),

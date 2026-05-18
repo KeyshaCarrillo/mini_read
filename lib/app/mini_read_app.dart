@@ -28,6 +28,8 @@ class MiniReadApp extends StatelessWidget {
       title: 'Mini Read',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
       onGenerateRoute: (settings) {
         return MaterialPageRoute(
           settings: settings,

@@ -23,7 +23,7 @@ class _OnboardingPreferencesPageState extends State<OnboardingPreferencesPage> {
 
   static const List<_AgeOption> _ageOptions = [
     _AgeOption(
-      label: 'Niños',
+      label: 'Ninos',
       range: '5 - 12',
       mood: 'Historias visuales, cortas y acompanadas',
       icon: Icons.auto_awesome_rounded,
@@ -55,12 +55,12 @@ class _OnboardingPreferencesPageState extends State<OnboardingPreferencesPage> {
   List<String> get _categoryOptions {
     final options = widget.controller.availableCategories;
     if (options.isEmpty) {
-      return const ['Romance', 'Drama', 'Aventura', 'Suspenso', 'Niños'];
+      return const ['Romance', 'Drama', 'Aventura', 'Suspenso', 'Ninos'];
     }
     return options;
   }
 
-  void _next() {
+  Future<void> _next() async {
     if (_step < 2) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 260),
@@ -69,7 +69,7 @@ class _OnboardingPreferencesPageState extends State<OnboardingPreferencesPage> {
       return;
     }
 
-    final profile = widget.controller.createDemoProfile(
+    final profile = await widget.controller.createProfile(
       OnboardingProfileDraft(
         name: _nameController.text,
         ageGroup: _ageGroup,
@@ -77,7 +77,8 @@ class _OnboardingPreferencesPageState extends State<OnboardingPreferencesPage> {
         favoriteCategories: _selectedCategories.toList(),
       ),
     );
-    widget.controller.selectProfile(profile);
+    await widget.controller.selectProfile(profile);
+    if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
   }
 
@@ -94,7 +95,7 @@ class _OnboardingPreferencesPageState extends State<OnboardingPreferencesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isChild = _ageGroup == 'Niños';
+    final isChild = _ageGroup == 'Ninos';
 
     return Scaffold(
       body: AnimatedContainer(
@@ -157,7 +158,7 @@ class _OnboardingPreferencesPageState extends State<OnboardingPreferencesPage> {
                           eyebrow: 'Bienvenida',
                           title: 'Vamos a crear tu primer perfil',
                           subtitle:
-                              'Asi Mini Read puede mostrar libros adecuados desde el inicio. Por ahora es demo local; luego lo guardamos en Firebase.',
+                              'Asi Mini Read puede mostrar libros adecuados desde el inicio y guardar el perfil en Firebase.',
                           child: TextField(
                             controller: _nameController,
                             textCapitalization: TextCapitalization.words,
@@ -183,8 +184,8 @@ class _OnboardingPreferencesPageState extends State<OnboardingPreferencesPage> {
                                     setState(() {
                                       _ageGroup = option.label;
                                       _readingMood = option.mood;
-                                      if (option.label == 'Niños') {
-                                        _selectedCategories.add('Niños');
+                                      if (option.label == 'Ninos') {
+                                        _selectedCategories.add('Ninos');
                                       }
                                     });
                                   },
@@ -261,7 +262,7 @@ class _OnboardingPreferencesPageState extends State<OnboardingPreferencesPage> {
         return Icons.nights_stay_rounded;
       case 'Aventura':
         return Icons.explore_rounded;
-      case 'Niños':
+      case 'Ninos':
         return Icons.auto_awesome_rounded;
       default:
         return Icons.menu_book_rounded;

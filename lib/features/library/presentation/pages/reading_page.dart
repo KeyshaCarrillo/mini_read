@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../../app/app_theme.dart';
+import '../../domain/entities/ai_access.dart';
 import '../../domain/entities/book.dart';
 import '../controllers/library_controller.dart';
 
@@ -27,9 +28,20 @@ class _ReadingPageState extends State<ReadingPage> {
     super.dispose();
   }
 
-  void _openChat(AiQuestionType type) {
+  Future<void> _openChat(AiQuestionType type) async {
     setState(() => _aiMenuOpen = false);
     final page = widget.book.pages[_currentIndex];
+    final access = await widget.controller.validateAiAccess(
+      type: type,
+      book: widget.book,
+      page: type == AiQuestionType.page ? page : null,
+    );
+
+    if (!mounted) return;
+    if (!access.granted) {
+      await _showTokenModal(access.cost, access.currentTokens);
+      return;
+    }
 
     showModalBottomSheet<void>(
       context: context,
@@ -41,6 +53,34 @@ class _ReadingPageState extends State<ReadingPage> {
         page: page,
         type: type,
       ),
+    );
+  }
+
+  Future<void> _showTokenModal(int cost, int currentTokens) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Necesitas mas tokens'),
+          content: Text(
+            'Esta accion cuesta $cost tokens y tu perfil tiene $currentTokens. Puedes ver un anuncio en video para ganar 30 tokens.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Ahora no'),
+            ),
+            FilledButton.icon(
+              onPressed: () async {
+                await widget.controller.rewardAdWatched();
+                if (context.mounted) Navigator.pop(context);
+              },
+              icon: const Icon(Icons.play_circle_rounded),
+              label: const Text('Ver anuncio +30'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -73,8 +113,10 @@ class _ReadingPageState extends State<ReadingPage> {
                   PageView.builder(
                     controller: _pageController,
                     itemCount: widget.book.pages.length,
-                    onPageChanged: (index) =>
-                        setState(() => _currentIndex = index),
+                    onPageChanged: (index) {
+                      setState(() => _currentIndex = index);
+                      widget.controller.saveReadingProgress(widget.book, index);
+                    },
                     itemBuilder: (context, index) {
                       final page = widget.book.pages[index];
                       return AnimatedBuilder(
@@ -196,7 +238,9 @@ class _ReaderPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isVisual = book.hasImmersiveImages && page.illustration != null;
+    final isVisual =
+        book.hasImmersiveImages &&
+        (page.illustration != null || page.imageUrl != null);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 82, 18, 64),
@@ -249,7 +293,8 @@ class _ReaderPage extends StatelessWidget {
               const SizedBox(height: 20),
               _IllustrationPanel(
                 color: Color(book.accentColor),
-                label: page.illustration!,
+                label: page.illustration ?? 'Ilustracion de la pagina',
+                imageUrl: page.imageUrl,
                 childMode: childMode,
               ),
             ],
@@ -272,11 +317,13 @@ class _ReaderPage extends StatelessWidget {
 class _IllustrationPanel extends StatelessWidget {
   final Color color;
   final String label;
+  final String? imageUrl;
   final bool childMode;
 
   const _IllustrationPanel({
     required this.color,
     required this.label,
+    required this.imageUrl,
     required this.childMode,
   });
 
@@ -292,21 +339,44 @@ class _IllustrationPanel extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          Align(
-            alignment: Alignment.center,
-            child: Icon(
-              childMode ? Icons.castle_rounded : Icons.landscape_rounded,
-              color: color.withValues(alpha: 0.78),
-              size: childMode ? 96 : 86,
+          if (imageUrl != null)
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(childMode ? 16 : 8),
+                child: Image.network(
+                  imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Icon(
+                    childMode ? Icons.castle_rounded : Icons.landscape_rounded,
+                    color: color.withValues(alpha: 0.78),
+                    size: childMode ? 96 : 86,
+                  ),
+                ),
+              ),
+            )
+          else
+            Align(
+              alignment: Alignment.center,
+              child: Icon(
+                childMode ? Icons.castle_rounded : Icons.landscape_rounded,
+                color: color.withValues(alpha: 0.78),
+                size: childMode ? 96 : 86,
+              ),
             ),
-          ),
           Align(
             alignment: Alignment.bottomLeft,
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: AppTheme.ink,
-                fontWeight: FontWeight.w800,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.78),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: AppTheme.ink,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ),
@@ -482,24 +552,9 @@ class _AiChatSheetState extends State<_AiChatSheet> {
     super.dispose();
   }
 
-  void _send() {
+  Future<void> _send() async {
     final question = _inputController.text.trim();
     if (question.isEmpty) return;
-
-    if (!widget.controller.spendForQuestion(widget.type)) {
-      setState(() {
-        _messages.add(_ChatMessage(fromUser: true, text: question));
-        _messages.add(
-          const _ChatMessage(
-            fromUser: false,
-            text:
-                'No tienes monedas suficientes. Puedes ver un anuncio demo para sumar 30 monedas o activar premium.',
-          ),
-        );
-      });
-      _inputController.clear();
-      return;
-    }
 
     final answer = widget.controller.mockAiAnswer(
       book: widget.book,
@@ -512,6 +567,13 @@ class _AiChatSheetState extends State<_AiChatSheet> {
       _messages.add(_ChatMessage(fromUser: true, text: question));
       _messages.add(_ChatMessage(fromUser: false, text: answer));
     });
+    await widget.controller.saveAiMessage(
+      book: widget.book,
+      type: widget.type,
+      question: question,
+      answer: answer,
+      page: widget.type == AiQuestionType.page ? widget.page : null,
+    );
     _inputController.clear();
   }
 

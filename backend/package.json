@@ -1,0 +1,24 @@
+{
+  "name": "mini-read-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Express API for Mini Read Firestore collections and book catalog.",
+  "main": "api/index.js",
+  "scripts": {
+    "start": "node api/index.js",
+    "dev": "node --watch api/index.js",
+    "vercel-dev": "vercel dev"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.18.3",
+    "firebase-admin": "^12.0.0"
+  },
+  "devDependencies": {
+    "vercel": "^33.5.1"
+  }
+}

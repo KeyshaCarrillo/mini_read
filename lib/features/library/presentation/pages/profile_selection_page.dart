@@ -18,6 +18,10 @@ class ProfileSelectionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
@@ -29,15 +33,13 @@ class ProfileSelectionPage extends StatelessWidget {
 
         return Scaffold(
           body: Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFFFFCF4),
-                  Color(0xFFF4E9D8),
-                  Color(0xFFE4F2EC),
-                ],
+                colors: isDark
+                    ? [AppTheme.obsidian, AppTheme.graphite, Color(0xFF182032)]
+                    : [AppTheme.paper, Color(0xFFF4E9D8), Color(0xFFE4F2EC)],
               ),
             ),
             child: SafeArea(
@@ -62,11 +64,11 @@ class ProfileSelectionPage extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Mini Read',
                               style: TextStyle(
-                                color: AppTheme.ink,
+                                color: scheme.onSurface,
                                 fontSize: 24,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -80,10 +82,10 @@ class ProfileSelectionPage extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 30),
-                      const Text(
+                      Text(
                         'Quien va a leer hoy?',
                         style: TextStyle(
-                          color: AppTheme.ink,
+                          color: scheme.onSurface,
                           fontSize: 34,
                           fontWeight: FontWeight.w900,
                           height: 1,
@@ -93,7 +95,7 @@ class ProfileSelectionPage extends StatelessWidget {
                       Text(
                         'Cada perfil puede tener edad, gustos y una biblioteca recomendada. Maximo ${LibraryController.maxProfiles} por cuenta.',
                         style: TextStyle(
-                          color: AppTheme.ink.withValues(alpha: 0.66),
+                          color: scheme.onSurface.withValues(alpha: 0.66),
                           height: 1.35,
                         ),
                       ),
@@ -112,8 +114,9 @@ class ProfileSelectionPage extends StatelessWidget {
                                   width: cardWidth,
                                   child: _ProfileCard(
                                     profile: profile,
-                                    onTap: () {
-                                      controller.selectProfile(profile);
+                                    onTap: () async {
+                                      await controller.selectProfile(profile);
+                                      if (!context.mounted) return;
                                       Navigator.pushReplacementNamed(
                                         context,
                                         '/home',
@@ -121,16 +124,17 @@ class ProfileSelectionPage extends StatelessWidget {
                                     },
                                   ),
                                 ),
-                              SizedBox(
-                                width: cardWidth,
-                                child: _AddProfileCard(
-                                  enabled: controller.canCreateProfile,
-                                  onTap: () => Navigator.pushNamed(
-                                    context,
-                                    '/onboarding',
+                              if (controller.canCreateProfile)
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _AddProfileCard(
+                                    enabled: true,
+                                    onTap: () => Navigator.pushNamed(
+                                      context,
+                                      '/onboarding',
+                                    ),
                                   ),
                                 ),
-                              ),
                             ],
                           );
                         },
@@ -156,6 +160,7 @@ class _ProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = Color(profile.accentColor);
+    final scheme = Theme.of(context).colorScheme;
 
     return InkWell(
       borderRadius: BorderRadius.circular(18),
@@ -163,7 +168,7 @@ class _ProfileCard extends StatelessWidget {
       child: Ink(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.92),
+          color: scheme.surface.withValues(alpha: 0.92),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: Colors.white),
           boxShadow: [
@@ -187,14 +192,22 @@ class _ProfileCard extends StatelessWidget {
                 children: [
                   Align(
                     alignment: Alignment.center,
-                    child: Text(
-                      profile.name.substring(0, 1).toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 42,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
+                    child: profile.avatarUrl.isEmpty
+                        ? Text(
+                            profile.name.substring(0, 1).toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 42,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          )
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.network(
+                              profile.avatarUrl,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                   ),
                   if (profile.childMode)
                     const Positioned(
@@ -218,19 +231,19 @@ class _ProfileCard extends StatelessWidget {
                     profile.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppTheme.ink,
+                    style: TextStyle(
+                      color: scheme.onSurface,
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${profile.ageGroup} · ${profile.readingMood}',
+                    '${profile.role == 'child' ? 'Nino' : 'Lector'} - ${profile.readingMood}',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: AppTheme.ink.withValues(alpha: 0.62),
+                      color: scheme.onSurface.withValues(alpha: 0.62),
                       height: 1.25,
                     ),
                   ),
@@ -280,13 +293,15 @@ class _AddProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return InkWell(
       borderRadius: BorderRadius.circular(18),
       onTap: enabled ? onTap : null,
       child: Ink(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: enabled ? 0.72 : 0.42),
+          color: scheme.surface.withValues(alpha: enabled ? 0.72 : 0.42),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: Colors.black.withValues(alpha: enabled ? 0.08 : 0.04),
@@ -313,8 +328,8 @@ class _AddProfileCard extends StatelessWidget {
                 children: [
                   Text(
                     enabled ? 'Crear otro perfil' : 'Limite alcanzado',
-                    style: const TextStyle(
-                      color: AppTheme.ink,
+                    style: TextStyle(
+                      color: scheme.onSurface,
                       fontWeight: FontWeight.w900,
                       fontSize: 17,
                     ),
@@ -325,7 +340,7 @@ class _AddProfileCard extends StatelessWidget {
                         ? 'Edad y gustos en menos de un minuto.'
                         : 'Ya tienes 4 perfiles en esta cuenta.',
                     style: TextStyle(
-                      color: AppTheme.ink.withValues(alpha: 0.6),
+                      color: scheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],

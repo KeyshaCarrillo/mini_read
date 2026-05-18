@@ -1,3 +1,4 @@
+// lib/features/library/presentation/pages/library_home_page.dart
 import 'package:flutter/material.dart';
 
 import '../../../../app/app_theme.dart';
@@ -66,62 +67,45 @@ class LibraryHomePage extends StatelessWidget {
                         controller: controller,
                         childMode: childMode,
                       ),
-                      const SizedBox(height: 22),
-                      _SectionHeader(
-                        title: childMode
-                            ? 'Tus cuentos favoritos'
-                            : 'Recomendado para ti',
-                        subtitle: profile == null
-                            ? 'Libros listos para explorar.'
-                            : 'Basado en: ${profile.favoriteCategories.join(', ')}',
-                        childMode: childMode,
-                      ),
-                      const SizedBox(height: 12),
-                      _HorizontalBooks(
-                        books: featuredBooks,
-                        childMode: childMode,
-                        onTap: (book) => Navigator.pushNamed(
-                          context,
-                          '/book',
-                          arguments: book,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _SectionHeader(
-                        title: childMode
-                            ? 'Lecturas con imagenes'
-                            : 'Biblioteca infantil',
-                        subtitle: childMode
-                            ? 'Paginas mas visuales para leer con calma.'
-                            : 'Modo visual, textos cortos y preguntas adaptadas.',
-                        childMode: childMode,
-                      ),
-                      const SizedBox(height: 12),
-                      for (final book in controller.childBooks) ...[
-                        _WideBookTile(
-                          book: book,
+                      if (controller.books.isEmpty) ...[
+                        const SizedBox(height: 24),
+                        _EmptyCatalogPanel(childMode: childMode),
+                      ] else ...[
+                        const SizedBox(height: 22),
+                        _SectionHeader(
+                          title: childMode
+                              ? 'Tus cuentos favoritos'
+                              : 'Recomendado para ti',
+                          subtitle: profile == null
+                              ? 'Libros listos para explorar.'
+                              : 'Basado en: ${profile.favoriteCategories.join(', ')}',
                           childMode: childMode,
-                          onTap: () => Navigator.pushNamed(
+                        ),
+                        const SizedBox(height: 12),
+                        _HorizontalBooks(
+                          books: featuredBooks,
+                          childMode: childMode,
+                          onTap: (book) => Navigator.pushNamed(
                             context,
                             '/book',
                             arguments: book,
                           ),
                         ),
-                        const SizedBox(height: 10),
-                      ],
-                      if (!childMode) ...[
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 24),
                         _SectionHeader(
-                          title: 'Clasicos para adultos',
-                          subtitle:
-                              'Romance, drama, suspenso y aventura para crecer el catalogo.',
-                          childMode: false,
+                          title: childMode
+                              ? 'Lecturas con imagenes'
+                              : 'Biblioteca infantil',
+                          subtitle: childMode
+                              ? 'Paginas mas visuales para leer con calma.'
+                              : 'Modo visual, textos cortos y preguntas adaptadas.',
+                          childMode: childMode,
                         ),
                         const SizedBox(height: 12),
-                        for (final book in controller.generalBooks.take(3)) ...[
+                        for (final book in controller.childBooks) ...[
                           _WideBookTile(
                             book: book,
-                            childMode: false,
+                            childMode: childMode,
                             onTap: () => Navigator.pushNamed(
                               context,
                               '/book',
@@ -129,6 +113,30 @@ class LibraryHomePage extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 10),
+                        ],
+                        if (!childMode) ...[
+                          const SizedBox(height: 14),
+                          _SectionHeader(
+                            title: 'Clasicos para adultos',
+                            subtitle:
+                                'Romance, drama, suspenso y aventura para crecer el catalogo.',
+                            childMode: false,
+                          ),
+                          const SizedBox(height: 12),
+                          for (final book in controller.generalBooks.take(
+                            3,
+                          )) ...[
+                            _WideBookTile(
+                              book: book,
+                              childMode: false,
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                '/book',
+                                arguments: book,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                          ],
                         ],
                       ],
                     ],
@@ -248,11 +256,6 @@ class _WelcomePanel extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              FilledButton.icon(
-                onPressed: controller.claimDailyReward,
-                icon: const Icon(Icons.card_giftcard_rounded),
-                label: const Text('+20 diaria'),
-              ),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   foregroundColor: childMode ? AppTheme.ink : Colors.white,
@@ -262,17 +265,48 @@ class _WelcomePanel extends StatelessWidget {
                         : Colors.white.withValues(alpha: 0.36),
                   ),
                 ),
-                onPressed: controller.rewardAdWatched,
+                onPressed: () => controller.rewardAdWatched(),
                 icon: const Icon(Icons.play_circle_rounded),
                 label: const Text('+30 anuncio'),
               ),
-              FilterChip(
-                selected: controller.isPremium,
-                label: const Text('Premium demo'),
-                avatar: const Icon(Icons.workspace_premium_rounded, size: 18),
-                onSelected: (_) => controller.togglePremiumPreview(),
-              ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyCatalogPanel extends StatelessWidget {
+  final bool childMode;
+
+  const _EmptyCatalogPanel({required this.childMode});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: scheme.surface.withValues(alpha: childMode ? 0.82 : 1),
+        borderRadius: BorderRadius.circular(childMode ? 18 : 8),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        children: [
+          // Usamos un ícono informativo general neutro y limpio
+          Icon(Icons.auto_stories_rounded, color: scheme.primary, size: 30),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              '¡Tu biblioteca está conectada al backend de Vercel con éxito!\n\nSin embargo, el catálogo regresó vacío porque aún no has registrado ningún documento de libro en tu colección de Firestore.',
+              style: TextStyle(
+                color: scheme.onSurface,
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+              ),
+            ),
           ),
         ],
       ),

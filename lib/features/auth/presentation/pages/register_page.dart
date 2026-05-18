@@ -47,6 +47,7 @@ class _RegisterPageState extends State<RegisterPage> {
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
+      await widget.libraryController.load();
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(
         context,

@@ -41,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text.trim(),
       );
       if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(context, '/profiles', (route) => false);
+      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
     } catch (e) {
       setState(() => _error = _cleanError(e));
     } finally {

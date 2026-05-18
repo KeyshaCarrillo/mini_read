@@ -1,6 +1,11 @@
 class ReaderProfile {
   final String id;
   final String name;
+  final String avatarUrl;
+  final String role;
+  final int tokens;
+  final int dailyStreak;
+  final DateTime? lastLoginDate;
   final String ageGroup;
   final String readingMood;
   final List<String> favoriteCategories;
@@ -10,10 +15,45 @@ class ReaderProfile {
   const ReaderProfile({
     required this.id,
     required this.name,
+    this.avatarUrl = '',
+    this.role = 'adult',
+    this.tokens = 0,
+    this.dailyStreak = 0,
+    this.lastLoginDate,
     required this.ageGroup,
     required this.readingMood,
     required this.favoriteCategories,
-    required this.childMode,
+    bool? childMode,
     required this.accentColor,
-  });
+  }) : childMode = childMode ?? role == 'child' || ageGroup == 'Ninos';
+
+  ReaderProfile copyWith({
+    String? id,
+    String? name,
+    String? avatarUrl,
+    String? role,
+    int? tokens,
+    int? dailyStreak,
+    DateTime? lastLoginDate,
+    String? ageGroup,
+    String? readingMood,
+    List<String>? favoriteCategories,
+    bool? childMode,
+    int? accentColor,
+  }) {
+    return ReaderProfile(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      role: role ?? this.role,
+      tokens: tokens ?? this.tokens,
+      dailyStreak: dailyStreak ?? this.dailyStreak,
+      lastLoginDate: lastLoginDate ?? this.lastLoginDate,
+      ageGroup: ageGroup ?? this.ageGroup,
+      readingMood: readingMood ?? this.readingMood,
+      favoriteCategories: favoriteCategories ?? this.favoriteCategories,
+      childMode: childMode ?? this.childMode,
+      accentColor: accentColor ?? this.accentColor,
+    );
+  }
 }

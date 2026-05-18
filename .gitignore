@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+
+# Las variables de entorno locales y secretas
+.env
+.env*.local

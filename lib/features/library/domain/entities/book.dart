@@ -33,11 +33,15 @@ class BookPage {
   final String title;
   final String body;
   final String? illustration;
+  final String? imageUrl;
 
   const BookPage({
     required this.pageNumber,
     required this.title,
     required this.body,
     this.illustration,
+    this.imageUrl,
   });
+
+  String get text => body;
 }
