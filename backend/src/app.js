@@ -2,6 +2,9 @@
 const cors = require('cors');
 const express = require('express');
 
+const fs = require('fs');
+const path = require('path');
+
 const { admin, db } = require('./firebase');
 const { optionalAuth, requireAdmin, requireAuth } = require('./middleware');
 const {
@@ -24,12 +27,161 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'mini-read-api' });
 });
 
+// ◄— Reemplaza por completo tu app.get('/api/books') con esto:
 app.get(
   '/api/books',
   optionalAuth,
   asyncHandler(async (_req, res) => {
-    const snapshot = await db.collection('books').orderBy('title').get();
-    res.json({ books: collectionToJson(snapshot) });
+    try {
+      // Definimos los libros directamente en memoria (Rápido, seguro y sin fallas de archivos)
+      const mockBooks = [
+        {
+          "id": "libro-ninos-1",
+          "title": "El Viaje de la Estrellita",
+          "author": "Elena Espacio",
+          "category": "Fantastía",
+          "audience": "Ninos",
+          "description": "Una pequeña estrella cae a la Tierra y busca la ayuda de los animales del bosque para volver al cielo nocturno.",
+          "sourceName": "API de libros",
+          "sourceUrl": "",
+          "accentColor": "#FF8FB3",
+          "estimatedMinutes": 5,
+          "hasImmersiveImages": true,
+          "pages": [
+            {
+              "pageNumber": 1,
+              "title": "Un Destello en la Noche",
+              "text": "Había una vez una pequeña estrella llamada Centella que vivía en lo más alto del cielo.",
+              "illustration": "estrellita_cayendo",
+              "imageUrl": "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0"
+            },
+            {
+              "pageNumber": 2,
+              "title": "Nuevos Amigos",
+              "text": "Al caer en un suave colchón de musgo, el sabio búho la saludó con un parpadeo.",
+              "illustration": "buho_sabio",
+              "imageUrl": "https://images.unsplash.com/photo-1543466835-00a7907e9de1"
+            }
+          ]
+        },
+        {
+          "id": "libro-ninos-2",
+          "title": "El Dragón que no podía Escupir Fuego",
+          "author": "Lucas Relatos",
+          "category": "Aventura",
+          "audience": "Ninos",
+          "description": "Dante es un dragón muy especial: en lugar de fuego, ¡escurre burbujas mágicas de colores!",
+          "sourceName": "API de libros",
+          "sourceUrl": "",
+          "accentColor": "#7ED7C1",
+          "estimatedMinutes": 6,
+          "hasImmersiveImages": true,
+          "pages": [
+            {
+              "pageNumber": 1,
+              "title": "La Gran Fogata",
+              "text": "Todos los dragones se preparaban para el concurso anual de llamaradas, excepto Dante.",
+              "illustration": "dragon_triste",
+              "imageUrl": ""
+            }
+          ]
+        },
+        {
+          "id": "libro-ninos-3",
+          "title": "Las Botas Saltarinas de Mateo",
+          "author": "Sonia Sonrisas",
+          "category": "Diversión",
+          "audience": "Ninos",
+          "description": "Mateo encuentra unas botas amarillas en su jardín que lo hacen saltar tan alto como las nubes.",
+          "sourceName": "API de libros",
+          "sourceUrl": "",
+          "accentColor": "#FFFFC8",
+          "estimatedMinutes": 4,
+          "hasImmersiveImages": false,
+          "pages": [
+            {
+              "pageNumber": 1,
+              "title": "El Descubrimiento",
+              "text": "Escondidas detrás del arbusto de rosas, las botas brillaban intensamente bajo el sol.",
+              "illustration": "botas_amarillas",
+              "imageUrl": ""
+            }
+          ]
+        },
+        {
+          "id": "libro-adultos-1",
+          "title": "El Susurro de la Niebla",
+          "author": "Carlos Somoza",
+          "category": "Suspenso",
+          "audience": "Adultos",
+          "description": "Un inspector retirado viaja a un pequeño pueblo costero solo para descubrir que nadie recuerda el año en que él nació.",
+          "sourceName": "API de libros",
+          "sourceUrl": "",
+          "accentColor": "#1B263B",
+          "estimatedMinutes": 15,
+          "hasImmersiveImages": false,
+          "pages": [
+            {
+              "pageNumber": 1,
+              "title": "Capítulo I: El Faro Olvidado",
+              "text": "El tren se detuvo con un quejido metálico. La niebla lo borraba todo, devorando los contornos de la vieja estación ferroviaria.",
+              "illustration": "",
+              "imageUrl": ""
+            }
+          ]
+        },
+        {
+          "id": "libro-adultos-2",
+          "title": "Ecos del Mañana",
+          "author": "V. K. Gibson",
+          "category": "Ciencia Ficción",
+          "audience": "General",
+          "description": "En una sociedad donde los recuerdos se pueden almacenar en discos duros, un programador encuentra un archivo encriptado con su propia voz.",
+          "sourceName": "API de libros",
+          "sourceUrl": "",
+          "accentColor": "#637A8B",
+          "estimatedMinutes": 12,
+          "hasImmersiveImages": false,
+          "pages": [
+            {
+              "pageNumber": 1,
+              "title": "Bloque de Memoria 0x7F",
+              "text": "Las líneas de código parpadeaban en el monitor holográfico. No era una intrusión externa; el algoritmo llevaba mi firma digital.",
+              "illustration": "",
+              "imageUrl": ""
+            }
+          ]
+        },
+        {
+          "id": "libro-adultos-3",
+          "title": "Cartas desde el Olvido",
+          "author": "Mariana Dávila",
+          "category": "Romance",
+          "audience": "Adultos",
+          "description": "Una recopilación de correspondencia encontrada en un baúl antiguo que narra un amor clandestino durante la época de la posguerra.",
+          "sourceName": "API de libros",
+          "sourceUrl": "",
+          "accentColor": "#76608A",
+          "estimatedMinutes": 10,
+          "hasImmersiveImages": false,
+          "pages": [
+            {
+              "pageNumber": 1,
+              "title": "Octubre, 1946",
+              "text": "Querida mía, te escribo estas líneas con la certeza de que el tiempo sabrá perdonar nuestra impaciencia...",
+              "illustration": "",
+              "imageUrl": ""
+            }
+          ]
+        }
+      ];
+
+      // Respondemos envolviéndolo exactamente en la propiedad "books" que Flutter espera
+      res.json({ books: mockBooks });
+    } catch (error) {
+      console.error('Error en el endpoint de libros:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
   })
 );
 

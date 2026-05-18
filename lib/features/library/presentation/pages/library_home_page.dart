@@ -69,7 +69,11 @@ class LibraryHomePage extends StatelessWidget {
                       ),
                       if (controller.books.isEmpty) ...[
                         const SizedBox(height: 24),
-                        _EmptyCatalogPanel(childMode: childMode),
+                        _EmptyCatalogPanel(
+                          controller:
+                              controller, // ◄— Le pasamos el controlador aquí
+                          childMode: childMode,
+                        ),
                       ] else ...[
                         const SizedBox(height: 22),
                         _SectionHeader(
@@ -279,8 +283,9 @@ class _WelcomePanel extends StatelessWidget {
 
 class _EmptyCatalogPanel extends StatelessWidget {
   final bool childMode;
+  final LibraryController controller;
 
-  const _EmptyCatalogPanel({required this.childMode});
+  const _EmptyCatalogPanel({required this.childMode, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -296,7 +301,13 @@ class _EmptyCatalogPanel extends StatelessWidget {
       child: Row(
         children: [
           // Usamos un ícono informativo general neutro y limpio
-          Icon(Icons.auto_stories_rounded, color: scheme.primary, size: 30),
+          Icon(
+            controller.books.isEmpty
+                ? Icons.cloud_off_rounded
+                : Icons.cloud_done_rounded,
+            color: scheme.primary,
+            size: 30,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
