@@ -25,6 +25,25 @@ class FirebaseLibraryDataSource {
     return UserLibraryState(isPremium: data?['isPremium'] == true);
   }
 
+  Stream<bool> watchPremiumStatus() {
+    final uid = currentUid;
+    if (uid == null) return Stream<bool>.value(false);
+
+    return firestore.collection('users').doc(uid).snapshots().map((snapshot) {
+      return snapshot.data()?['isPremium'] == true;
+    });
+  }
+
+  Future<void> updatePremiumStatus(bool isPremium) async {
+    final uid = currentUid;
+    if (uid == null) return;
+
+    await firestore.collection('users').doc(uid).set({
+      'isPremium': isPremium,
+      'premiumUpdatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   Future<List<ReaderProfile>> getProfiles() async {
     final uid = currentUid;
     if (uid == null) return const [];
@@ -54,13 +73,12 @@ class FirebaseLibraryDataSource {
     final uid = currentUid;
     if (uid == null) return profile;
 
-    final ref = firestore
-        .collection('users')
-        .doc(uid)
-        .collection('perfiles')
-        .doc(profile.id);
+    final userRef = firestore.collection('users').doc(uid);
+    final ref = userRef.collection('perfiles').doc(profile.id);
 
     return firestore.runTransaction((transaction) async {
+      final userSnapshot = await transaction.get(userRef);
+      final isPremium = userSnapshot.data()?['isPremium'] == true;
       final snapshot = await transaction.get(ref);
       final current = snapshot.exists
           ? _profileFromSnapshot(snapshot)
@@ -78,7 +96,7 @@ class FirebaseLibraryDataSource {
           lastLogin != null &&
           _sameDay(lastLogin, today.subtract(const Duration(days: 1)));
       final nextStreak = wasYesterday ? current.dailyStreak + 1 : 1;
-      final tokenReward = wasYesterday ? 20 : 20;
+      final tokenReward = isPremium ? 0 : 20;
       final updated = current.copyWith(
         dailyStreak: nextStreak,
         tokens: current.tokens + tokenReward,
@@ -92,14 +110,16 @@ class FirebaseLibraryDataSource {
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
-      final transactionRef = firestore.collection('token_transactions').doc();
-      transaction.set(transactionRef, {
-        'uid': uid,
-        'profileId': profile.id,
-        'amount': tokenReward,
-        'type': 'daily_streak',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      if (tokenReward > 0) {
+        final transactionRef = firestore.collection('token_transactions').doc();
+        transaction.set(transactionRef, {
+          'uid': uid,
+          'profileId': profile.id,
+          'amount': tokenReward,
+          'type': 'daily_streak',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
 
       return updated;
     });
@@ -283,6 +303,9 @@ class FirebaseLibraryDataSource {
       readingMood:
           (data['readingMood'] as String?) ?? 'Quiero descubrir buenos libros',
       favoriteCategories:
+          (data['preferences'] as List<dynamic>?)
+              ?.map((value) => value.toString())
+              .toList() ??
           (data['favoriteCategories'] as List<dynamic>?)
               ?.map((value) => value.toString())
               .toList() ??
@@ -304,6 +327,7 @@ class FirebaseLibraryDataSource {
       'ageGroup': profile.ageGroup,
       'readingMood': profile.readingMood,
       'favoriteCategories': profile.favoriteCategories,
+      'preferences': profile.favoriteCategories,
       'accentColor': profile.accentColor,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),

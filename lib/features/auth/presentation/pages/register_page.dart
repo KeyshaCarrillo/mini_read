@@ -98,7 +98,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     const Text(
                       'Tu biblioteca empieza aqui',
                       style: TextStyle(
-                        color: AppTheme.ink,
+                        color: Color.fromARGB(255, 255, 255, 255),
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
                         height: 1.02,
@@ -108,7 +108,12 @@ class _RegisterPageState extends State<RegisterPage> {
                     Text(
                       'Crea tu cuenta y despues elegimos edad, gustos y el primer perfil lector.',
                       style: TextStyle(
-                        color: AppTheme.ink.withValues(alpha: 0.68),
+                        color: const Color.fromARGB(
+                          255,
+                          255,
+                          255,
+                          255,
+                        ).withValues(alpha: 0.68),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -133,7 +138,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       obscureText: true,
                       textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
-                        labelText: 'Contrasena',
+                        labelText: 'Contraseña',
                         prefixIcon: Icon(Icons.lock_rounded),
                       ),
                       validator: (value) {

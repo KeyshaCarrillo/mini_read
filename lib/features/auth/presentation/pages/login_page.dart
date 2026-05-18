@@ -83,7 +83,7 @@ class _LoginPageState extends State<LoginPage> {
                   const Text(
                     'Mini Read',
                     style: TextStyle(
-                      color: AppTheme.ink,
+                      color: Color.fromARGB(255, 255, 255, 255),
                       fontSize: 36,
                       fontWeight: FontWeight.w900,
                       height: 1,
@@ -93,7 +93,12 @@ class _LoginPageState extends State<LoginPage> {
                   Text(
                     'Entra a tu biblioteca, perfiles y lectura con IA.',
                     style: TextStyle(
-                      color: AppTheme.ink.withValues(alpha: 0.68),
+                      color: const Color.fromARGB(
+                        255,
+                        247,
+                        243,
+                        243,
+                      ).withValues(alpha: 0.68),
                       fontSize: 16,
                     ),
                   ),
@@ -123,12 +128,12 @@ class _LoginPageState extends State<LoginPage> {
                           obscureText: _obscurePassword,
                           onFieldSubmitted: (_) => _login(),
                           decoration: InputDecoration(
-                            labelText: 'Contrasena',
+                            labelText: 'Contraseña',
                             prefixIcon: const Icon(Icons.lock_rounded),
                             suffixIcon: IconButton(
                               tooltip: _obscurePassword
-                                  ? 'Mostrar contrasena'
-                                  : 'Ocultar contrasena',
+                                  ? 'Mostrar contraseña'
+                                  : 'Ocultar contraseña',
                               onPressed: () => setState(
                                 () => _obscurePassword = !_obscurePassword,
                               ),

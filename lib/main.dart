@@ -14,6 +14,7 @@ import 'features/auth/presentation/controllers/auth_controller.dart';
 import 'features/library/data/datasources/book_api_datasource.dart';
 import 'features/library/data/datasources/firebase_library_datasource.dart';
 import 'features/library/data/repositories/library_repository_impl.dart';
+import 'features/library/data/services/book_api_service.dart';
 import 'features/library/domain/usecases/get_books.dart';
 import 'features/library/domain/usecases/get_profiles.dart';
 import 'features/library/presentation/controllers/library_controller.dart';
@@ -39,7 +40,8 @@ void main() async {
     bookApiDataSource: BookApiDataSource(
       client: http.Client(),
 
-      baseUrl: dotenv.env['BOOK_API_BASE_URL'] ?? '',
+      baseUrl:
+          dotenv.env['BOOK_API_BASE_URL'] ?? BookApiService.defaultEndpoint,
     ),
     firebaseDataSource: FirebaseLibraryDataSource(
       firestore: FirebaseFirestore.instance,

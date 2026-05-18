@@ -7,6 +7,8 @@ abstract class LibraryRepository {
   Future<List<Book>> getBooks();
   Future<List<ReaderProfile>> getProfiles();
   Future<UserLibraryState> getUserState();
+  Stream<bool> watchPremiumStatus();
+  Future<void> updatePremiumStatus(bool isPremium);
   Future<void> saveProfile(ReaderProfile profile);
   Future<ReaderProfile> checkInProfile(ReaderProfile profile);
   Future<AiAccessResult> validateAndSpendAiTokens({

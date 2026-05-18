@@ -53,6 +53,23 @@ class LibraryRepositoryImpl implements LibraryRepository {
   }
 
   @override
+  Stream<bool> watchPremiumStatus() {
+    final firebase = firebaseDataSource;
+    if (firebase == null || firebase.currentUid == null) {
+      return Stream<bool>.value(false);
+    }
+
+    return firebase.watchPremiumStatus();
+  }
+
+  @override
+  Future<void> updatePremiumStatus(bool isPremium) async {
+    final firebase = firebaseDataSource;
+    if (firebase == null || firebase.currentUid == null) return;
+    await firebase.updatePremiumStatus(isPremium);
+  }
+
+  @override
   Future<void> saveProfile(ReaderProfile profile) async {
     final firebase = firebaseDataSource;
     if (firebase == null || firebase.currentUid == null) return;
