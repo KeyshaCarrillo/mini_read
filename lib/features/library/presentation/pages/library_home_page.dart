@@ -1,9 +1,16 @@
-// lib/features/library/presentation/pages/library_home_page.dart
 import 'package:flutter/material.dart';
 
-import '../../../../app/app_theme.dart';
+import '../../../../core/responsive/app_breakpoints.dart';
+import '../../../../shared/widgets/hoverable_card.dart';
+import '../../../../shared/widgets/skeleton_loader.dart';
+import '../../../../shared/widgets/status_badge.dart';
+import '../../../../theme/app_theme.dart';
 import '../../domain/entities/book.dart';
 import '../controllers/library_controller.dart';
+import '../layouts/enterprise_library_shell.dart';
+import '../widgets/dashboard/book_table.dart';
+import '../widgets/dashboard/kpi_card.dart';
+import '../widgets/dashboard/library_chart_card.dart';
 
 class LibraryHomePage extends StatelessWidget {
   final LibraryController controller;
@@ -15,133 +22,114 @@ class LibraryHomePage extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
-        final profile = controller.activeProfile;
-        final childMode = profile?.childMode ?? false;
-        final featuredBooks = controller.recommendedBooks;
-
-        return Scaffold(
-          extendBodyBehindAppBar: true,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            title: Text(profile == null ? 'Biblioteca' : profile.name),
-            actions: [
-              IconButton(
-                tooltip: 'Cambiar perfil',
-                onPressed: () =>
-                    Navigator.pushReplacementNamed(context, '/profiles'),
-                icon: const Icon(Icons.switch_account_rounded),
-              ),
-            ],
-          ),
-          body: AnimatedContainer(
-            duration: const Duration(milliseconds: 360),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: childMode
-                    ? const [
-                        Color(0xFFFFF0A8),
-                        Color(0xFFFFB7D2),
-                        Color(0xFFB7F3E5),
-                        Color(0xFFAEC6FF),
-                      ]
-                    : const [
-                        Color(0xFFFFFCF4),
-                        Color(0xFFEAF3F0),
-                        Color(0xFFF5E7DC),
-                      ],
-              ),
-            ),
-            child: SafeArea(
-              child: Stack(
-                children: [
-                  if (childMode)
-                    const _KidBackdrop()
-                  else
-                    const _CalmBackdrop(),
-                  ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 76, 16, 30),
-                    children: [
-                      _WelcomePanel(
-                        controller: controller,
-                        childMode: childMode,
-                      ),
-                      if (controller.books.isEmpty) ...[
-                        const SizedBox(height: 24),
-                        _EmptyCatalogPanel(childMode: childMode),
-                      ] else ...[
-                        const SizedBox(height: 22),
-                        _SectionHeader(
-                          title: childMode
-                              ? 'Tus cuentos favoritos'
-                              : 'Recomendado para ti',
-                          subtitle: profile == null
-                              ? 'Libros listos para explorar.'
-                              : 'Basado en: ${profile.favoriteCategories.join(', ')}',
-                          childMode: childMode,
-                        ),
-                        const SizedBox(height: 12),
-                        _HorizontalBooks(
-                          books: featuredBooks,
-                          childMode: childMode,
-                          onTap: (book) => Navigator.pushNamed(
-                            context,
-                            '/book',
-                            arguments: book,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        _SectionHeader(
-                          title: childMode
-                              ? 'Lecturas con imagenes'
-                              : 'Biblioteca infantil',
-                          subtitle: childMode
-                              ? 'Paginas mas visuales para leer con calma.'
-                              : 'Modo visual, textos cortos y preguntas adaptadas.',
-                          childMode: childMode,
-                        ),
-                        const SizedBox(height: 12),
-                        for (final book in controller.childBooks) ...[
-                          _WideBookTile(
-                            book: book,
-                            childMode: childMode,
-                            onTap: () => Navigator.pushNamed(
-                              context,
-                              '/book',
-                              arguments: book,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                        ],
-                        if (!childMode) ...[
-                          const SizedBox(height: 14),
-                          _SectionHeader(
-                            title: 'Clasicos para adultos',
-                            subtitle:
-                                'Romance, drama, suspenso y aventura para crecer el catalogo.',
-                            childMode: false,
-                          ),
-                          const SizedBox(height: 12),
-                          for (final book in controller.generalBooks.take(
-                            3,
-                          )) ...[
-                            _WideBookTile(
-                              book: book,
-                              childMode: false,
-                              onTap: () => Navigator.pushNamed(
-                                context,
-                                '/book',
-                                arguments: book,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                          ],
-                        ],
-                      ],
-                    ],
+        return EnterpriseLibraryShell(
+          controller: controller,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 240),
+            switchInCurve: Curves.easeOutCubic,
+            child: controller.loading
+                ? const _DashboardSkeleton(key: ValueKey('loading'))
+                : _DashboardContent(
+                    key: const ValueKey('dashboard'),
+                    controller: controller,
                   ),
-                ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _DashboardContent extends StatelessWidget {
+  final LibraryController controller;
+
+  const _DashboardContent({super.key, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = controller.activeProfile;
+    final recommended = controller.recommendedBooks;
+    final childBooks = controller.childBooks;
+    final generalBooks = controller.generalBooks;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final padding = AppBreakpoints.pagePadding(width);
+        final kpiColumns = AppBreakpoints.kpiColumns(width);
+        final contentMaxWidth = AppBreakpoints.isWide(width) ? 1360.0 : double.infinity;
+
+        return ColoredBox(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: SingleChildScrollView(
+            padding: padding,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: contentMaxWidth),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _DashboardHeader(
+                      profileName: profile?.name ?? 'Biblioteca',
+                      subtitle: profile?.readingMood ?? 'Administra catálogo, perfiles y acceso AI desde una vista productiva.',
+                      categories: profile?.favoriteCategories ?? const [],
+                    ),
+                    const SizedBox(height: 22),
+                    _KpiGrid(
+                      columns: kpiColumns,
+                      children: [
+                        KpiCard(
+                          label: 'Libros disponibles',
+                          value: '${controller.books.length}',
+                          trend: '${recommended.length} recomendados activos',
+                          icon: Icons.auto_stories_rounded,
+                          color: AppTheme.indigo600,
+                        ),
+                        KpiCard(
+                          label: 'Monedas AI',
+                          value: '${controller.coins}',
+                          trend: controller.isPremium ? 'Premium desbloqueado' : '+30 por anuncio disponible',
+                          icon: Icons.toll_rounded,
+                          color: const Color(0xFF0F766E),
+                        ),
+                        KpiCard(
+                          label: 'Racha lectora',
+                          value: '${controller.streakDays}d',
+                          trend: 'Check-in diario sincronizado',
+                          icon: Icons.local_fire_department_rounded,
+                          color: const Color(0xFFD97706),
+                        ),
+                        KpiCard(
+                          label: 'Perfiles',
+                          value: '${controller.profiles.length}/${LibraryController.maxProfiles}',
+                          trend: controller.canCreateProfile ? 'Capacidad disponible' : 'Límite alcanzado',
+                          icon: Icons.group_rounded,
+                          color: const Color(0xFF7C3AED),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 22),
+                    _ResponsivePanels(
+                      left: LibraryChartCard(books: controller.books),
+                      right: _OperationsPanel(controller: controller),
+                    ),
+                    const SizedBox(height: 22),
+                    if (controller.books.isEmpty)
+                      const _EmptyStatePanel()
+                    else ...[
+                      _RecommendedRail(
+                        title: 'Recomendado para el perfil',
+                        books: recommended,
+                        onOpen: (book) => Navigator.pushNamed(context, '/book', arguments: book),
+                      ),
+                      const SizedBox(height: 22),
+                      BookTable(
+                        books: [...childBooks, ...generalBooks],
+                        onOpen: (book) => Navigator.pushNamed(context, '/book', arguments: book),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -151,320 +139,159 @@ class LibraryHomePage extends StatelessWidget {
   }
 }
 
-class _WelcomePanel extends StatelessWidget {
-  final LibraryController controller;
-  final bool childMode;
+class _DashboardHeader extends StatelessWidget {
+  final String profileName;
+  final String subtitle;
+  final List<String> categories;
 
-  const _WelcomePanel({required this.controller, required this.childMode});
-
-  @override
-  Widget build(BuildContext context) {
-    final profile = controller.activeProfile;
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: childMode ? Colors.white.withValues(alpha: 0.76) : AppTheme.ink,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: childMode ? 0.08 : 0.14),
-            blurRadius: 30,
-            offset: const Offset(0, 16),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  color: Color(profile?.accentColor ?? 0xFF5B7C62),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Icon(
-                  childMode
-                      ? Icons.auto_awesome_rounded
-                      : Icons.local_library_rounded,
-                  color: Colors.white,
-                  size: 30,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      childMode
-                          ? 'Hora de imaginar'
-                          : 'Tu biblioteca esta lista',
-                      style: TextStyle(
-                        color: childMode ? AppTheme.ink : Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        height: 1.05,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      profile?.readingMood ?? 'Elige un libro para empezar.',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: childMode
-                            ? AppTheme.ink.withValues(alpha: 0.64)
-                            : Colors.white.withValues(alpha: 0.72),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _Metric(
-                icon: Icons.paid_rounded,
-                label: '${controller.coins} monedas',
-                childMode: childMode,
-              ),
-              _Metric(
-                icon: Icons.local_fire_department_rounded,
-                label: '${controller.streakDays} dias',
-                childMode: childMode,
-              ),
-              _Metric(
-                icon: controller.isPremium
-                    ? Icons.workspace_premium_rounded
-                    : Icons.lock_open_rounded,
-                label: controller.isPremium ? 'Premium' : 'Gratis',
-                childMode: childMode,
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: childMode ? AppTheme.ink : Colors.white,
-                  side: BorderSide(
-                    color: childMode
-                        ? AppTheme.ink.withValues(alpha: 0.16)
-                        : Colors.white.withValues(alpha: 0.36),
-                  ),
-                ),
-                onPressed: () => controller.rewardAdWatched(),
-                icon: const Icon(Icons.play_circle_rounded),
-                label: const Text('+30 anuncio'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyCatalogPanel extends StatelessWidget {
-  final bool childMode;
-
-  const _EmptyCatalogPanel({required this.childMode});
+  const _DashboardHeader({
+    required this.profileName,
+    required this.subtitle,
+    required this.categories,
+  });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: scheme.surface.withValues(alpha: childMode ? 0.82 : 1),
-        borderRadius: BorderRadius.circular(childMode ? 18 : 8),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.22)),
-      ),
-      child: Row(
-        children: [
-          // Usamos un ícono informativo general neutro y limpio
-          Icon(Icons.auto_stories_rounded, color: scheme.primary, size: 30),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              '¡Tu biblioteca está conectada al backend de Vercel con éxito!\n\nSin embargo, el catálogo regresó vacío porque aún no has registrado ningún documento de libro en tu colección de Firestore.',
-              style: TextStyle(
-                color: scheme.onSurface,
-                fontWeight: FontWeight.w700,
-                height: 1.3,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text('Dashboard', style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w800)),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Icon(Icons.chevron_right_rounded, size: 16),
+                  ),
+                  Text(profileName, style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w800)),
+                ],
               ),
-            ),
+              const SizedBox(height: 10),
+              Text(
+                'Library Operations',
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -1.4,
+                  height: 1.05,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 760),
+                child: Text(
+                  subtitle,
+                  style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 15, height: 1.45, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        if (categories.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.end,
+            children: categories.take(3).map((category) => StatusBadge(label: category, color: AppTheme.indigo600)).toList(),
+          ),
+      ],
     );
   }
 }
 
-class _Metric extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool childMode;
+class _KpiGrid extends StatelessWidget {
+  final int columns;
+  final List<Widget> children;
 
-  const _Metric({
-    required this.icon,
-    required this.label,
-    required this.childMode,
-  });
+  const _KpiGrid({required this.columns, required this.children});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: childMode
-            ? Colors.white.withValues(alpha: 0.82)
-            : Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(99),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: childMode ? AppTheme.coral : Colors.white,
-            size: 18,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: childMode ? AppTheme.ink : Colors.white,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final spacing = 16.0;
+        final itemWidth = (constraints.maxWidth - spacing * (columns - 1)) / columns;
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: children.map((child) => SizedBox(width: itemWidth, child: child)).toList(),
+        );
+      },
     );
   }
 }
 
-class _HorizontalBooks extends StatelessWidget {
-  final List<Book> books;
-  final bool childMode;
-  final ValueChanged<Book> onTap;
+class _ResponsivePanels extends StatelessWidget {
+  final Widget left;
+  final Widget right;
 
-  const _HorizontalBooks({
-    required this.books,
-    required this.childMode,
-    required this.onTap,
-  });
+  const _ResponsivePanels({required this.left, required this.right});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: childMode ? 254 : 238,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: books.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          final book = books[index];
-          return _BookPoster(
-            book: book,
-            childMode: childMode,
-            onTap: () => onTap(book),
-          );
-        },
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < AppBreakpoints.laptop) {
+          return Column(children: [left, const SizedBox(height: 16), right]);
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(flex: 7, child: left),
+            const SizedBox(width: 16),
+            Expanded(flex: 4, child: right),
+          ],
+        );
+      },
     );
   }
 }
 
-class _BookPoster extends StatelessWidget {
-  final Book book;
-  final bool childMode;
-  final VoidCallback onTap;
+class _OperationsPanel extends StatelessWidget {
+  final LibraryController controller;
 
-  const _BookPoster({
-    required this.book,
-    required this.childMode,
-    required this.onTap,
-  });
+  const _OperationsPanel({required this.controller});
 
   @override
   Widget build(BuildContext context) {
-    final accent = Color(book.accentColor);
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(childMode ? 22 : 14),
-      onTap: onTap,
-      child: SizedBox(
-        width: childMode ? 164 : 150,
+    final scheme = Theme.of(context).colorScheme;
+    final profile = controller.activeProfile;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: childMode ? 190 : 174,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: accent,
-                borderRadius: BorderRadius.circular(childMode ? 22 : 14),
-                boxShadow: [
-                  BoxShadow(
-                    color: accent.withValues(alpha: 0.24),
-                    blurRadius: 18,
-                    offset: const Offset(0, 10),
+            Text('Estado del sistema', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+            const SizedBox(height: 4),
+            Text('Visibilidad inmediata de sincronización, plan y perfil activo.', style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 18),
+            _SystemRow(icon: Icons.cloud_done_rounded, label: 'Backend', value: controller.actionLoading ? 'Sincronizando' : 'Operativo'),
+            _SystemRow(icon: Icons.person_pin_rounded, label: 'Perfil activo', value: profile?.name ?? 'Pendiente'),
+            _SystemRow(icon: Icons.workspace_premium_rounded, label: 'Plan', value: controller.isPremium ? 'Premium' : 'Gratis'),
+            _SystemRow(icon: Icons.auto_awesome_motion_rounded, label: 'Lecturas visuales', value: '${controller.books.where((book) => book.hasImmersiveImages).length}'),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: controller.actionLoading ? null : controller.rewardAdWatched,
+                    icon: controller.actionLoading
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.play_circle_rounded),
+                    label: const Text('Añadir +30'),
                   ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Icon(
-                      childMode
-                          ? Icons.auto_awesome_rounded
-                          : Icons.bookmark_rounded,
-                      color: Colors.white.withValues(alpha: 0.62),
-                      size: childMode ? 34 : 26,
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Text(
-                      book.title,
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        height: 1.02,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${book.category} · ${book.estimatedMinutes} min',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: AppTheme.ink.withValues(alpha: 0.64),
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
+                ),
+                const SizedBox(width: 10),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.pushReplacementNamed(context, '/profiles'),
+                  icon: const Icon(Icons.switch_account_rounded),
+                  label: const Text('Perfil'),
+                ),
+              ],
             ),
           ],
         ),
@@ -473,150 +300,60 @@ class _BookPoster extends StatelessWidget {
   }
 }
 
-class _WideBookTile extends StatelessWidget {
-  final Book book;
-  final bool childMode;
-  final VoidCallback onTap;
+class _SystemRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
 
-  const _WideBookTile({
-    required this.book,
-    required this.childMode,
-    required this.onTap,
-  });
+  const _SystemRow({required this.icon, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
-    final accent = Color(book.accentColor);
-
-    return Card(
-      color: Colors.white.withValues(alpha: childMode ? 0.82 : 1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(childMode ? 18 : 10),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(childMode ? 18 : 10),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              Container(
-                width: 82,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: accent,
-                  borderRadius: BorderRadius.circular(childMode ? 18 : 10),
-                ),
-                child: Icon(
-                  book.hasImmersiveImages
-                      ? Icons.image_rounded
-                      : Icons.auto_stories_rounded,
-                  color: Colors.white,
-                  size: 34,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      book.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppTheme.ink,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      book.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: AppTheme.ink.withValues(alpha: 0.66),
-                        height: 1.25,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          book.hasImmersiveImages
-                              ? Icons.auto_awesome_motion_rounded
-                              : Icons.schedule_rounded,
-                          size: 16,
-                          color: accent,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            book.hasImmersiveImages
-                                ? 'Lectura visual'
-                                : '${book.estimatedMinutes} min de lectura',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: accent,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Icon(icon, color: scheme.primary),
+          const SizedBox(width: 12),
+          Expanded(child: Text(label, style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w700))),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
+        ],
       ),
     );
   }
 }
 
-class _SectionHeader extends StatelessWidget {
+class _RecommendedRail extends StatelessWidget {
   final String title;
-  final String subtitle;
-  final bool childMode;
+  final List<Book> books;
+  final ValueChanged<Book> onOpen;
 
-  const _SectionHeader({
-    required this.title,
-    required this.subtitle,
-    required this.childMode,
-  });
+  const _RecommendedRail({required this.title, required this.books, required this.onOpen});
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            if (childMode) ...[
-              const Icon(Icons.star_rounded, color: AppTheme.coral, size: 22),
-              const SizedBox(width: 6),
-            ],
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  color: AppTheme.ink,
-                  fontSize: 23,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
+            Expanded(child: Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5))),
+            Text('${books.length} items', style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w800)),
           ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          subtitle,
-          style: TextStyle(
-            color: AppTheme.ink.withValues(alpha: 0.62),
-            height: 1.32,
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 182,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: books.take(8).length,
+            separatorBuilder: (_, _) => const SizedBox(width: 14),
+            itemBuilder: (context, index) => SizedBox(
+              width: 300,
+              child: _BookCard(book: books[index], onTap: () => onOpen(books[index])),
+            ),
           ),
         ),
       ],
@@ -624,75 +361,111 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _KidBackdrop extends StatelessWidget {
-  const _KidBackdrop();
+class _BookCard extends StatelessWidget {
+  final Book book;
+  final VoidCallback onTap;
+
+  const _BookCard({required this.book, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Stack(
+    final scheme = Theme.of(context).colorScheme;
+    final accent = Color(book.accentColor);
+    return HoverableCard(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Positioned(
-            top: 82,
-            right: 26,
-            child: Icon(
-              Icons.castle_rounded,
-              color: Colors.white.withValues(alpha: 0.44),
-              size: 94,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(color: accent.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(14)),
+                child: Icon(book.hasImmersiveImages ? Icons.image_rounded : Icons.auto_stories_rounded, color: accent),
+              ),
+              const Spacer(),
+              StatusBadge(label: book.audience, color: accent),
+            ],
           ),
-          Positioned(
-            top: 172,
-            left: 24,
-            child: Icon(
-              Icons.auto_awesome_rounded,
-              color: AppTheme.coral.withValues(alpha: 0.34),
-              size: 58,
-            ),
-          ),
-          Positioned(
-            bottom: 92,
-            right: 36,
-            child: Icon(
-              Icons.palette_rounded,
-              color: Colors.white.withValues(alpha: 0.36),
-              size: 88,
-            ),
-          ),
+          const SizedBox(height: 16),
+          Text(book.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, height: 1.15)),
+          const SizedBox(height: 8),
+          Text(book.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.35, fontWeight: FontWeight.w600)),
+          const Spacer(),
+          Text('${book.category} · ${book.estimatedMinutes} min', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w800)),
         ],
       ),
     );
   }
 }
 
-class _CalmBackdrop extends StatelessWidget {
-  const _CalmBackdrop();
+class _EmptyStatePanel extends StatelessWidget {
+  const _EmptyStatePanel();
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          Positioned(
-            top: 94,
-            right: 26,
-            child: Icon(
-              Icons.local_library_rounded,
-              color: AppTheme.moss.withValues(alpha: 0.12),
-              size: 106,
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Row(
+          children: [
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(color: scheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
+              child: Icon(Icons.dataset_linked_rounded, color: scheme.primary),
             ),
-          ),
-          Positioned(
-            bottom: 72,
-            left: 26,
-            child: Icon(
-              Icons.bookmark_rounded,
-              color: AppTheme.plum.withValues(alpha: 0.12),
-              size: 90,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Catálogo conectado, sin documentos todavía', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 6),
+                  Text(
+                    'El dashboard conserva la lógica funcional original: cuando Firestore o la API no retornan libros, se muestra un estado vacío claro con siguiente acción contextual.',
+                    style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600, height: 1.4),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _DashboardSkeleton extends StatelessWidget {
+  const _DashboardSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final padding = AppBreakpoints.pagePadding(constraints.maxWidth);
+        return SingleChildScrollView(
+          padding: padding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SkeletonLoader(width: 220, height: 20),
+              const SizedBox(height: 14),
+              const SkeletonLoader(width: 420, height: 44),
+              const SizedBox(height: 24),
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: List.generate(4, (_) => const SkeletonLoader(width: 260, height: 168)),
+              ),
+              const SizedBox(height: 22),
+              const SkeletonLoader(width: double.infinity, height: 330),
+            ],
+          ),
+        );
+      },
     );
   }
 }
