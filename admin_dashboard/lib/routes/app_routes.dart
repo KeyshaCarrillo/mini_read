@@ -8,14 +8,11 @@ class AdminRoute {
 }
 
 abstract final class AdminRoutes {
-  static const dashboard = AdminRoute(path: '/dashboard', label: 'Overview', icon: Icons.grid_view_rounded);
-  static const analytics = AdminRoute(path: '/analytics', label: 'Analytics', icon: Icons.query_stats_rounded);
-  static const users = AdminRoute(path: '/users', label: 'Users', icon: Icons.group_outlined);
-  static const reports = AdminRoute(path: '/reports', label: 'Reports', icon: Icons.description_outlined);
-  static const tokens = AdminRoute(path: '/tokens', label: 'Tokens', icon: Icons.generating_tokens_outlined);
-  static const activity = AdminRoute(path: '/activity', label: 'Activity', icon: Icons.timeline_rounded);
-  static const settings = AdminRoute(path: '/settings', label: 'Settings', icon: Icons.tune_rounded);
+  static const dashboard = AdminRoute(path: '/dashboard', label: 'Dashboard General', icon: Icons.grid_view_rounded);
+  static const users = AdminRoute(path: '/users', label: 'Gestión de Usuarios', icon: Icons.group_outlined);
+  static const tokens = AdminRoute(path: '/tokens', label: 'Historial de Tokens', icon: Icons.generating_tokens_outlined);
+  static const settings = AdminRoute(path: '/settings', label: 'Configuración', icon: Icons.tune_rounded);
 
-  static const primary = [dashboard, analytics, users, reports, tokens, activity];
+  static const primary = [dashboard, users, tokens];
   static const utility = [settings];
 }

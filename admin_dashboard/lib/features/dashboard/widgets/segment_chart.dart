@@ -6,9 +6,16 @@ import '../../../shared/components/section_header.dart';
 import '../../../shared/extensions/context_extensions.dart';
 import '../models/admin_models.dart';
 
-class SegmentChart extends StatelessWidget {
+class SegmentChart extends StatefulWidget {
   const SegmentChart({super.key, required this.segments});
   final List<SegmentMetric> segments;
+
+  @override
+  State<SegmentChart> createState() => _SegmentChartState();
+}
+
+class _SegmentChartState extends State<SegmentChart> {
+  int touchedIndex = -1;
 
   @override
   Widget build(BuildContext context) {
@@ -16,25 +23,33 @@ class SegmentChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionHeader(title: 'Plan mix', subtitle: 'Revenue-facing account distribution'),
+          const SectionHeader(title: 'Segmentación por edades', subtitle: 'Niños, adolescentes y adultos'),
           const SizedBox(height: 24),
           SizedBox(
             height: 210,
             child: PieChart(
               PieChartData(
-                centerSpaceRadius: 58,
+                centerSpaceRadius: 54,
                 sectionsSpace: 3,
-                pieTouchData: PieTouchData(enabled: true),
+                pieTouchData: PieTouchData(touchCallback: (event, response) {
+                  setState(() => touchedIndex = response?.touchedSection?.touchedSectionIndex ?? -1);
+                }),
                 sections: [
-                  for (final segment in segments)
-                    PieChartSectionData(value: segment.value, color: segment.color, radius: 26, showTitle: false),
+                  for (var i = 0; i < widget.segments.length; i++)
+                    PieChartSectionData(
+                      value: widget.segments[i].value,
+                      color: widget.segments[i].color,
+                      radius: touchedIndex == i ? 36 : 27,
+                      title: touchedIndex == i ? '${widget.segments[i].value.toStringAsFixed(0)}%' : '',
+                      titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13),
+                    ),
                 ],
               ),
-              duration: const Duration(milliseconds: 700),
+              duration: const Duration(milliseconds: 350),
             ),
           ),
           const SizedBox(height: 18),
-          ...segments.map((segment) => Padding(
+          ...widget.segments.map((segment) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Row(children: [
                   Container(width: 8, height: 8, decoration: BoxDecoration(color: segment.color, shape: BoxShape.circle)),

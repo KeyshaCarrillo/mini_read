@@ -23,7 +23,7 @@ class DashboardOverviewPage extends ConsumerWidget {
       color: context.theme.scaffoldBackgroundColor,
       child: snapshot.when(
         loading: () => const _DashboardSkeleton(),
-        error: (error, _) => Center(child: Text('Unable to load dashboard metrics: $error')),
+        error: (error, _) => Center(child: Padding(padding: const EdgeInsets.all(32), child: Text('No se pudieron cargar las métricas administrativas. Revisa que ADMIN_AUTH_TOKEN sea un ID token Firebase de administrador.\n\n$error', textAlign: TextAlign.center))),
         data: (data) {
           final columns = responsiveValue<int>(context, tablet: 2, laptop: 2, desktop: 4, wide: 4);
           return CustomScrollView(
@@ -35,14 +35,18 @@ class DashboardOverviewPage extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('Dashboard overview', style: context.text.headlineMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -1)),
+                          Text('Dashboard General', style: context.text.headlineMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -1)),
                           const SizedBox(height: 8),
-                          Text('Monitor platform growth, reading engagement, token economics, and operational risk.', style: context.text.bodyMedium?.copyWith(color: context.colors.onSurfaceVariant)),
+                          Text('Métricas dinámicas leídas desde Firebase: libros, usuarios y token_transactions.', style: context.text.bodyMedium?.copyWith(color: context.colors.onSurfaceVariant)),
                         ]),
                       ),
                       const _StatusPill(),
                     ],
                   ).enterpriseFade(),
+                  if (data.books.length < 10) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    _InventoryWarning(count: data.books.length),
+                  ],
                   const SizedBox(height: AppSpacing.lg),
                   GridView.builder(
                     shrinkWrap: true,
@@ -82,7 +86,7 @@ class _StatusPill extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 7, height: 7, decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle)),
         const SizedBox(width: 8),
-        Text('All systems operational', style: context.text.labelMedium?.copyWith(color: const Color(0xFF10B981), fontWeight: FontWeight.w800)),
+        Text('API Firebase activa', style: context.text.labelMedium?.copyWith(color: const Color(0xFF10B981), fontWeight: FontWeight.w800)),
       ]),
     );
   }
@@ -103,6 +107,28 @@ class _DashboardSkeleton extends StatelessWidget {
         GridView.count(shrinkWrap: true, crossAxisCount: 4, crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 1.35, children: const [SkeletonBlock(height: 220), SkeletonBlock(height: 220), SkeletonBlock(height: 220), SkeletonBlock(height: 220)]),
         const SizedBox(height: 24),
         const Expanded(child: SkeletonBlock()),
+      ]),
+    );
+  }
+}
+
+class _InventoryWarning extends StatelessWidget {
+  const _InventoryWarning({required this.count});
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFED488).withValues(alpha: .35),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF775A19).withValues(alpha: .25)),
+      ),
+      child: Row(children: [
+        const Icon(Icons.warning_amber_rounded, color: Color(0xFF775A19)),
+        const SizedBox(width: 12),
+        Expanded(child: Text('Inventario bajo: hay $count libros. Añade más títulos desde “Gestión de Usuarios” para mejorar el demo.', style: context.text.labelLarge?.copyWith(fontWeight: FontWeight.w800, color: const Color(0xFF775A19)))),
       ]),
     );
   }

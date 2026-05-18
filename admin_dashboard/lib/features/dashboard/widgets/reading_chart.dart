@@ -12,63 +12,76 @@ class ReadingChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final maxValue = points.fold<double>(10, (max, point) => [max, point.value, point.secondaryValue].reduce((a, b) => a > b ? a : b));
     return PremiumPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader(
-            title: 'Reading engagement',
-            subtitle: 'Sessions and completed chapters over the last 7 days',
-            trailing: SegmentedButton<String>(
-              segments: const [ButtonSegment(value: '7d', label: Text('7d')), ButtonSegment(value: '30d', label: Text('30d')), ButtonSegment(value: '90d', label: Text('90d'))],
-              selected: const {'7d'},
-              onSelectionChanged: (_) {},
-            ),
+          const SectionHeader(
+            title: 'Consumo mensual de tokens',
+            subtitle: 'Comparativa Firebase: anuncios vs consultas de IA desde token_transactions',
           ),
           const SizedBox(height: 24),
           SizedBox(
             height: 310,
-            child: LineChart(
-              LineChartData(
-                minY: 0,
-                maxY: 110,
+            child: BarChart(
+              BarChartData(
+                maxY: maxValue == 0 ? 10 : maxValue * 1.25,
                 gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: context.theme.dividerColor, strokeWidth: 1)),
                 borderData: FlBorderData(show: false),
                 titlesData: FlTitlesData(
                   topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 36, interval: 25, getTitlesWidget: (value, _) => Text(value.toInt().toString(), style: context.text.labelSmall?.copyWith(color: context.colors.onSurfaceVariant)))),
+                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40, getTitlesWidget: (value, _) => Text(value.toInt().toString(), style: context.text.labelSmall?.copyWith(color: context.colors.onSurfaceVariant)))),
                   bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (value, _) {
                     final index = value.toInt();
                     if (index < 0 || index >= points.length) return const SizedBox.shrink();
                     return Padding(padding: const EdgeInsets.only(top: 10), child: Text(points[index].label, style: context.text.labelSmall?.copyWith(color: context.colors.onSurfaceVariant)));
                   })),
                 ),
-                lineTouchData: LineTouchData(
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipItems: (spots) => spots.map((spot) => LineTooltipItem('${spot.y.toStringAsFixed(0)}k events', TextStyle(color: context.colors.surface, fontWeight: FontWeight.w700))).toList(),
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      final source = rodIndex == 0 ? 'Anuncios' : 'IA';
+                      return BarTooltipItem('$source\n${rod.toY.toStringAsFixed(0)} tokens', TextStyle(color: context.colors.surface, fontWeight: FontWeight.w800));
+                    },
                   ),
                 ),
-                lineBarsData: [
-                  _line(context.colors.primary, points.map((e) => e.value).toList()),
-                  _line(const Color(0xFF10B981), points.map((e) => e.secondaryValue).toList()),
+                barGroups: [
+                  for (var i = 0; i < points.length; i++)
+                    BarChartGroupData(x: i, barsSpace: 6, barRods: [
+                      BarChartRodData(toY: points[i].value, width: 18, borderRadius: BorderRadius.circular(6), color: context.colors.primary),
+                      BarChartRodData(toY: points[i].secondaryValue, width: 18, borderRadius: BorderRadius.circular(6), color: const Color(0xFFFED488)),
+                    ]),
                 ],
               ),
               duration: const Duration(milliseconds: 700),
             ),
           ),
+          const SizedBox(height: 12),
+          Row(children: [
+            _Legend(color: context.colors.primary, label: 'Anuncios'),
+            const SizedBox(width: 16),
+            const _Legend(color: Color(0xFFFED488), label: 'Consultas IA'),
+          ]),
         ],
       ),
     );
   }
+}
 
-  LineChartBarData _line(Color color, List<double> values) => LineChartBarData(
-        spots: [for (var i = 0; i < values.length; i++) FlSpot(i.toDouble(), values[i])],
-        isCurved: true,
-        preventCurveOverShooting: true,
-        color: color,
-        barWidth: 3,
-        dotData: const FlDotData(show: false),
-        belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [color.withValues(alpha: .18), color.withValues(alpha: 0)])),
-      );
+class _Legend extends StatelessWidget {
+  const _Legend({required this.color, required this.label});
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(children: [
+      Container(width: 10, height: 10, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(999))),
+      const SizedBox(width: 8),
+      Text(label, style: context.text.labelMedium?.copyWith(fontWeight: FontWeight.w700)),
+    ]);
+  }
 }

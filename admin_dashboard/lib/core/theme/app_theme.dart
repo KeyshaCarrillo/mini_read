@@ -10,9 +10,9 @@ abstract final class AdminTheme {
   static ThemeData _theme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
     final scheme = ColorScheme.fromSeed(
-      seedColor: AdminColors.indigo600,
+      seedColor: AdminColors.deepBlue,
       brightness: brightness,
-      primary: AdminColors.indigo600,
+      primary: AdminColors.deepBlue,
       surface: isDark ? AdminColors.zinc950 : Colors.white,
     );
     final textTheme = GoogleFonts.interTextTheme(
@@ -23,7 +23,7 @@ abstract final class AdminTheme {
       useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
-      scaffoldBackgroundColor: isDark ? AdminColors.zinc950 : AdminColors.slate50,
+      scaffoldBackgroundColor: isDark ? AdminColors.zinc950 : AdminColors.brightBackground,
       textTheme: textTheme,
       visualDensity: VisualDensity.compact,
       dividerColor: isDark ? AdminColors.zinc800 : AdminColors.slate200,

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 abstract final class AdminColors {
+  static const brightBackground = Color(0xFFFBF8FF);
+  static const deepBlue = Color(0xFF000666);
+  static const gold = Color(0xFF775A19);
+  static const goldContainer = Color(0xFFFED488);
   static const zinc50 = Color(0xFFFAFAFA);
   static const zinc100 = Color(0xFFF4F4F5);
   static const zinc200 = Color(0xFFE4E4E7);

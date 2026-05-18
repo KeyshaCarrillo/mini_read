@@ -5,8 +5,9 @@ import '../../core/constants/app_spacing.dart';
 import '../extensions/context_extensions.dart';
 
 class AdminTopbar extends StatelessWidget {
-  const AdminTopbar({super.key, required this.isDark, required this.onThemeToggle});
+  const AdminTopbar({super.key, required this.title, required this.isDark, required this.onThemeToggle});
 
+  final String title;
   final bool isDark;
   final VoidCallback onThemeToggle;
 
@@ -23,11 +24,11 @@ class AdminTopbar extends StatelessWidget {
         children: [
           Text('Admin', style: context.text.labelMedium?.copyWith(color: context.colors.onSurfaceVariant)),
           Icon(Icons.chevron_right_rounded, size: 18, color: context.colors.onSurfaceVariant),
-          Text('Dashboard overview', style: context.text.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
+          Text(title, style: context.text.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
           const Spacer(),
           const _GlobalSearch(),
           const SizedBox(width: AppSpacing.md),
-          FilledButton.tonalIcon(onPressed: () {}, icon: const Icon(Icons.add_rounded, size: 18), label: const Text('Quick action')),
+          FilledButton.tonalIcon(onPressed: () {}, icon: const Icon(Icons.cloud_sync_rounded, size: 18), label: const Text('Firebase API')),
           const SizedBox(width: AppSpacing.xs),
           IconButton(onPressed: onThemeToggle, tooltip: 'Toggle theme', icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined)),
           IconButton(onPressed: () {}, tooltip: 'Notifications', icon: Badge.count(count: 4, child: const Icon(Icons.notifications_none_rounded))),
@@ -49,7 +50,7 @@ class _GlobalSearch extends StatelessWidget {
       child: TextField(
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'Search users, reports, tokens...',
+          hintText: 'Buscar usuarios, libros, tokens...',
           prefixIcon: const Icon(Icons.search_rounded, size: 18),
           suffixIcon: Container(
             margin: const EdgeInsets.all(8),
