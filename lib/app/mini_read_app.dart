@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../admin/presentation/admin_dashboard_page.dart';
 import '../features/auth/presentation/controllers/auth_controller.dart';
 import '../features/auth/presentation/pages/register_page.dart';
 import '../features/library/domain/entities/book.dart';
@@ -35,6 +36,8 @@ class MiniReadApp extends StatelessWidget {
           settings: settings,
           builder: (_) {
             switch (settings.name) {
+              case '/admin':
+                return const AdminDashboardPage();
               case '/register':
                 return RegisterPage(
                   controller: authController,
