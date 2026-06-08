@@ -13,7 +13,15 @@ class UsersBooksScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final admin = context.watch<AdminController>();
+    final users = context.select((AdminController c) => c.visibleUsers);
+    final books = context.select((AdminController c) => c.visibleBooks);
+    final hasSearchQuery = context.select(
+      (AdminController c) => c.hasSearchQuery,
+    );
+    final searchQuery = context.select((AdminController c) => c.searchQuery);
+    final isSearchPending = context.select(
+      (AdminController c) => c.isSearchPending,
+    );
     final textTheme = Theme.of(context).textTheme;
 
     return DefaultTabController(
@@ -45,7 +53,7 @@ class UsersBooksScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Gestion de Usuarios y Libros',
+                            'Gestión de Usuarios y Libros',
                             style: textTheme.headlineMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: const Color(0xFF0C165F),
@@ -82,7 +90,7 @@ class UsersBooksScreen extends StatelessWidget {
                       child: FilledButton.icon(
                         onPressed: () => showAddBookDialog(context),
                         icon: const Icon(Icons.auto_stories_rounded),
-                        label: const Text('Anadir Libro'),
+                        label: const Text('Añadir Libro'),
                         style: FilledButton.styleFrom(
                           foregroundColor: Colors.white,
                           backgroundColor: Colors.transparent,
@@ -140,6 +148,67 @@ class UsersBooksScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (hasSearchQuery || isSearchPending) ...[
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 8,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF4F7FF),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: const Color(0xFFD8E0FF)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isSearchPending)
+                              const SizedBox.square(
+                                dimension: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            else
+                              const Icon(Icons.search_rounded, size: 14),
+                            const SizedBox(width: 8),
+                            Text(
+                              hasSearchQuery
+                                  ? 'Busqueda: "$searchQuery"'
+                                  : 'Buscando...',
+                              style: textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFF),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: AppColors.outlineVariant),
+                        ),
+                        child: Text(
+                          '${users.length} usuarios • ${books.length} libros',
+                          style: textTheme.labelLarge?.copyWith(
+                            color: const Color(0xFF2B3765),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -148,8 +217,8 @@ class UsersBooksScreen extends StatelessWidget {
             height: 600,
             child: TabBarView(
               children: [
-                _UsersTable(users: admin.users),
-                _BooksTable(books: admin.books),
+                _UsersTable(users: users, hasSearchQuery: hasSearchQuery),
+                _BooksTable(books: books, hasSearchQuery: hasSearchQuery),
               ],
             ),
           ),
@@ -161,8 +230,9 @@ class UsersBooksScreen extends StatelessWidget {
 
 class _UsersTable extends StatelessWidget {
   final List<AdminUser> users;
+  final bool hasSearchQuery;
 
-  const _UsersTable({required this.users});
+  const _UsersTable({required this.users, required this.hasSearchQuery});
 
   @override
   Widget build(BuildContext context) {
@@ -208,7 +278,15 @@ class _UsersTable extends StatelessWidget {
             DataColumn2(label: Text('Actualizado'), size: ColumnSize.M),
             DataColumn(label: Text('Acciones')),
           ],
-          empty: const Center(child: Text('No hay usuarios para mostrar.')),
+          empty: _TableEmptyState(
+            icon: Icons.person_search_rounded,
+            title: hasSearchQuery
+                ? 'Sin usuarios que coincidan'
+                : 'No hay usuarios para mostrar',
+            subtitle: hasSearchQuery
+                ? 'Prueba con nombre, correo, username o nickname.'
+                : 'Cuando existan usuarios apareceran en esta tabla.',
+          ),
           rows: [
             for (final user in users)
               DataRow2(
@@ -275,8 +353,9 @@ class _UsersTable extends StatelessWidget {
 
 class _BooksTable extends StatelessWidget {
   final List<Book> books;
+  final bool hasSearchQuery;
 
-  const _BooksTable({required this.books});
+  const _BooksTable({required this.books, required this.hasSearchQuery});
 
   @override
   Widget build(BuildContext context) {
@@ -322,7 +401,15 @@ class _BooksTable extends StatelessWidget {
             DataColumn2(label: Text('Descripcion'), size: ColumnSize.L),
             DataColumn(label: Text('Acciones')),
           ],
-          empty: const Center(child: Text('No hay libros registrados.')),
+          empty: _TableEmptyState(
+            icon: Icons.menu_book_rounded,
+            title: hasSearchQuery
+                ? 'Sin libros que coincidan'
+                : 'No hay libros registrados',
+            subtitle: hasSearchQuery
+                ? 'Prueba con titulo, autor o categoria.'
+                : 'Agrega libros para visualizarlos aqui.',
+          ),
           rows: [
             for (final book in books)
               DataRow2(
@@ -356,10 +443,20 @@ class _BooksTable extends StatelessWidget {
                     ),
                   ),
                   DataCell(
-                    IconButton.filledTonal(
-                      tooltip: 'Eliminar libro',
-                      icon: const Icon(Icons.delete_outline_rounded),
-                      onPressed: () => _confirmDeleteBook(context, book),
+                    Wrap(
+                      spacing: 6,
+                      children: [
+                        IconButton.filledTonal(
+                          tooltip: 'Ver libro',
+                          icon: const Icon(Icons.visibility_rounded),
+                          onPressed: () => _showBookDetails(context, book),
+                        ),
+                        IconButton.filledTonal(
+                          tooltip: 'Editar libro',
+                          icon: const Icon(Icons.edit_rounded),
+                          onPressed: () => _showEditBookDialog(context, book),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -432,6 +529,52 @@ class _PremiumChip extends StatelessWidget {
                   : AppColors.onSurfaceVariant,
               fontWeight: FontWeight.w700,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TableEmptyState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _TableEmptyState({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF3FF),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Icon(icon, color: AppColors.primary),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -677,30 +820,185 @@ Future<void> showAddBookDialog(BuildContext context) async {
   description.dispose();
 }
 
-Future<void> _confirmDeleteBook(BuildContext context, Book book) async {
-  final confirmed = await showDialog<bool>(
+Future<void> _showBookDetails(BuildContext context, Book book) async {
+  await showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('Eliminar libro'),
-      content: Text('Deseas eliminar "${book.title}" de la API?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancelar'),
+      title: const Text('Detalle de Libro'),
+      content: SizedBox(
+        width: 520,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _BookDetailRow(label: 'Titulo', value: book.title),
+            _BookDetailRow(label: 'Autor', value: book.author),
+            _BookDetailRow(label: 'Categoria', value: book.category),
+            _BookDetailRow(label: 'Paginas', value: '${book.pageCount}'),
+            _BookDetailRow(
+              label: 'Descripcion',
+              value: book.description.isEmpty
+                  ? 'Sin descripcion'
+                  : book.description,
+            ),
+          ],
         ),
+      ),
+      actions: [
         FilledButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Eliminar'),
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cerrar'),
         ),
       ],
     ),
   );
+}
 
-  if (confirmed != true || !context.mounted) return;
-  await _runAction(
-    context,
-    () => context.read<AdminController>().deleteBook(book.id),
+Future<void> _showEditBookDialog(BuildContext context, Book book) async {
+  final formKey = GlobalKey<FormState>();
+  final title = TextEditingController(text: book.title);
+  final author = TextEditingController(text: book.author);
+  final category = TextEditingController(text: book.category);
+  final description = TextEditingController(text: book.description);
+
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      var saving = false;
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Editar Libro'),
+            content: SizedBox(
+              width: 520,
+              child: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        controller: title,
+                        decoration: const InputDecoration(labelText: 'Titulo'),
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
+                            ? 'El titulo es requerido.'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: author,
+                        decoration: const InputDecoration(labelText: 'Autor'),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: category,
+                        decoration: const InputDecoration(
+                          labelText: 'Categoria',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: description,
+                        minLines: 2,
+                        maxLines: 4,
+                        decoration: const InputDecoration(
+                          labelText: 'Descripcion',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: saving
+                    ? null
+                    : () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton.icon(
+                onPressed: saving
+                    ? null
+                    : () async {
+                        if (!formKey.currentState!.validate()) return;
+                        setState(() => saving = true);
+                        try {
+                          await dialogContext
+                              .read<AdminController>()
+                              .updateBook(book.id, {
+                                'title': title.text.trim(),
+                                'author': author.text.trim(),
+                                'category': category.text.trim(),
+                                'audience': category.text.trim(),
+                                'description': description.text.trim(),
+                              });
+                          if (dialogContext.mounted) {
+                            Navigator.of(dialogContext).pop();
+                            ScaffoldMessenger.of(dialogContext).showSnackBar(
+                              const SnackBar(
+                                content: Text('Libro actualizado.'),
+                              ),
+                            );
+                          }
+                        } catch (error) {
+                          setState(() => saving = false);
+                          if (dialogContext.mounted) {
+                            ScaffoldMessenger.of(
+                              dialogContext,
+                            ).showSnackBar(SnackBar(content: Text('$error')));
+                          }
+                        }
+                      },
+                icon: saving
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save_rounded),
+                label: const Text('Guardar cambios'),
+              ),
+            ],
+          );
+        },
+      );
+    },
   );
+
+  title.dispose();
+  author.dispose();
+  category.dispose();
+  description.dispose();
+}
+
+class _BookDetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _BookDetailRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: textTheme.labelLarge?.copyWith(
+              color: AppColors.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(value, style: textTheme.bodyLarge),
+        ],
+      ),
+    );
+  }
 }
 
 Future<void> _runAction(

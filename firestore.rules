@@ -1,0 +1,255 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function currentUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && (
+          request.auth.token.admin == true
+          || currentUserDoc().data.role in ['admin', 'owner']
+        );
+    }
+
+    function hasOnlyChanged(allowedFields) {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(allowedFields);
+    }
+
+    function legacyProfileExists(profileId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid)/perfiles/$(profileId));
+    }
+
+    function profileV2Exists(profileId) {
+      return exists(/databases/$(database)/documents/profiles/$(profileId));
+    }
+
+    function ownsProfile(profileId) {
+      return signedIn()
+        && (
+          legacyProfileExists(profileId)
+          || (
+            profileV2Exists(profileId)
+            && get(/databases/$(database)/documents/profiles/$(profileId)).data.userId == request.auth.uid
+          )
+        );
+    }
+
+    function ownData() {
+      return signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    function ownUidData() {
+      return signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    function writesOwnUserData() {
+      return signedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    function writesOwnUidData() {
+      return signedIn() && request.resource.data.uid == request.auth.uid;
+    }
+
+    function writesOwnedProfileData() {
+      return writesOwnUserData()
+        && request.resource.data.profileId is string
+        && ownsProfile(request.resource.data.profileId);
+    }
+
+    function createsOwnUser(uid) {
+      return isOwner(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.role == 'user'
+        && request.resource.data.isPremium == false;
+    }
+
+    function updatesOwnUserWithoutProtectedFields(uid) {
+      return isOwner(uid)
+        && hasOnlyChanged([
+          'name',
+          'email',
+          'displayName',
+          'photoUrl',
+          'photoURL',
+          'avatarUrl',
+          'bio',
+          'favoriteGenres',
+          'preferences',
+          'selectedProfileId',
+          'updatedAt'
+        ]);
+    }
+
+    function createsOwnProfileV2(profileId) {
+      return signedIn()
+        && request.resource.data.profileId == profileId
+        && request.resource.data.userId == request.auth.uid
+        && (!request.resource.data.keys().hasAny(['tokens']) || request.resource.data.tokens == 0)
+        && (!request.resource.data.keys().hasAny(['streak']) || request.resource.data.streak == 0);
+    }
+
+    function updatesOwnProfileV2() {
+      return ownData()
+        && request.resource.data.userId == resource.data.userId
+        && hasOnlyChanged([
+          'name',
+          'avatarUrl',
+          'bio',
+          'favoriteGenres',
+          'ageRange',
+          'isDefault',
+          'isChild',
+          'updatedAt'
+        ]);
+    }
+
+    match /users/{uid} {
+      allow get: if isOwner(uid) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if createsOwnUser(uid) || isAdmin();
+      allow update: if updatesOwnUserWithoutProtectedFields(uid) || isAdmin();
+      allow delete: if isAdmin();
+
+      match /perfiles/{profileId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow create, update, delete: if isOwner(uid) || isAdmin();
+
+        match /notes/{noteId} {
+          allow read: if isOwner(uid) || isAdmin();
+          allow create, update, delete: if isOwner(uid) || isAdmin();
+        }
+      }
+
+      match /favorites/{bookId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow create: if isOwner(uid)
+          && request.resource.data.bookId == bookId
+          && request.resource.data.keys().hasOnly([
+            'bookId',
+            'title',
+            'coverUrl',
+            'pdfUrl',
+            'createdAt'
+          ]);
+        allow update: if isOwner(uid)
+          && request.resource.data.bookId == bookId
+          && request.resource.data.keys().hasOnly([
+            'bookId',
+            'title',
+            'coverUrl',
+            'pdfUrl',
+            'createdAt'
+          ]);
+        allow delete: if isOwner(uid) || isAdmin();
+      }
+
+      match /reading_progress/{bookId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow create, update: if isOwner(uid)
+          && request.resource.data.bookId == bookId
+          && request.resource.data.keys().hasOnly([
+            'bookId',
+            'currentPage',
+            'totalPages',
+            'progressPercentage',
+            'lastReadAt'
+          ]);
+        allow delete: if isOwner(uid) || isAdmin();
+      }
+    }
+
+    match /profiles/{profileId} {
+      allow read: if ownData() || isAdmin();
+      allow create: if createsOwnProfileV2(profileId) || isAdmin();
+      allow update: if updatesOwnProfileV2() || isAdmin();
+      allow delete: if ownData() || isAdmin();
+    }
+
+    match /memberships/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /books/{bookId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /reading_progress/{progressId} {
+      allow read: if ownData() || isAdmin();
+      allow create, update: if writesOwnedProfileData() || isAdmin();
+      allow delete: if ownData() || isAdmin();
+    }
+
+    match /favorites/{favoriteId} {
+      allow read: if ownData() || isAdmin();
+      allow create: if writesOwnedProfileData() || isAdmin();
+      allow update: if false;
+      allow delete: if ownData() || isAdmin();
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if writesOwnedProfileData() || isAdmin();
+      allow update, delete: if ownData() || isAdmin();
+    }
+
+    match /history_reading/{historyId} {
+      allow read: if ownUidData() || ownData() || isAdmin();
+      allow create, update: if writesOwnUidData() || writesOwnedProfileData() || isAdmin();
+      allow delete: if ownUidData() || ownData() || isAdmin();
+    }
+
+    match /ia_chats/{chatId} {
+      allow read: if ownUidData() || ownData() || isAdmin();
+      allow create: if writesOwnUidData() || writesOwnedProfileData() || isAdmin();
+      allow update, delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read: if (
+          signedIn()
+          && (
+            get(/databases/$(database)/documents/ia_chats/$(chatId)).data.userId == request.auth.uid
+            || get(/databases/$(database)/documents/ia_chats/$(chatId)).data.uid == request.auth.uid
+          )
+        ) || isAdmin();
+        allow create, update, delete: if isAdmin();
+      }
+    }
+
+    match /token_transactions/{transactionId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if ownData() || isAdmin();
+      allow create: if isAdmin();
+      allow update: if ownData()
+        && request.resource.data.userId == resource.data.userId
+        && hasOnlyChanged(['read']);
+      allow delete: if isAdmin();
+    }
+
+    match /achievements/{achievementId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

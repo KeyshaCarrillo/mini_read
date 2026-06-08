@@ -46,7 +46,7 @@ class TokenHistoryScreen extends StatelessWidget {
                   child: Text('No hay transacciones registradas.'),
                 ),
                 columns: const [
-                  DataColumn2(label: Text('Transaccion'), size: ColumnSize.L),
+                  DataColumn2(label: Text('Transacción'), size: ColumnSize.L),
                   DataColumn(label: Text('Tipo')),
                   DataColumn(label: Text('Monto')),
                   DataColumn2(label: Text('Usuario'), size: ColumnSize.L),
@@ -113,7 +113,7 @@ void _showTransactionDetail(
   showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('Detalle de transaccion'),
+      title: const Text('Detalle de transacción'),
       content: SizedBox(
         width: 520,
         child: Column(

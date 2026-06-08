@@ -44,6 +44,12 @@ dependencies:
   provider: ^6.1.5
   share_plus: 10.0.0
 
+  fl_chart: ^1.2.0
+  fl_chart: ^1.1.1
+  data_table_2: ^2.6.0
+  google_fonts: ^6.3.2
+
+
 
 dev_dependencies:
   flutter_test:

@@ -5,7 +5,7 @@ import '../controllers/admin_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../core/constants.dart';
 
-class AdminTopbar extends StatelessWidget {
+class AdminTopbar extends StatefulWidget {
   final bool showMenu;
   final VoidCallback onMenuPressed;
 
@@ -16,11 +16,47 @@ class AdminTopbar extends StatelessWidget {
   });
 
   @override
+  State<AdminTopbar> createState() => _AdminTopbarState();
+}
+
+class _AdminTopbarState extends State<AdminTopbar> {
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final searchInput = context.read<AdminController>().searchInput;
+    if (_searchController.text == searchInput) return;
+    _searchController.value = TextEditingValue(
+      text: searchInput,
+      selection: TextSelection.collapsed(offset: searchInput.length),
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final admin = context.watch<AdminController>();
+    final section = context.select((AdminController c) => c.section);
+    final isDarkMode = context.select((AdminController c) => c.isDarkMode);
+    final isSearchPending = context.select(
+      (AdminController c) => c.isSearchPending,
+    );
+    final searchInput = context.select((AdminController c) => c.searchInput);
     final auth = context.watch<AuthController>();
     final now = DateTime.now();
     final textTheme = Theme.of(context).textTheme;
+    final hasQuery = searchInput.trim().isNotEmpty;
 
     return Container(
       height: 88,
@@ -41,10 +77,10 @@ class AdminTopbar extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (showMenu)
+          if (widget.showMenu)
             IconButton(
-              tooltip: 'Menu',
-              onPressed: onMenuPressed,
+              tooltip: 'Menú',
+              onPressed: widget.onMenuPressed,
               icon: const Icon(Icons.menu_rounded),
             ),
           Expanded(
@@ -53,7 +89,7 @@ class AdminTopbar extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  _titleFor(admin.section),
+                  _titleFor(section),
                   style: textTheme.headlineSmall?.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w800,
@@ -62,7 +98,7 @@ class AdminTopbar extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  _subtitleFor(admin.section),
+                  _subtitleFor(section),
                   style: textTheme.bodyMedium?.copyWith(
                     color: AppColors.onSurfaceVariant,
                   ),
@@ -74,10 +110,43 @@ class AdminTopbar extends StatelessWidget {
             SizedBox(
               width: 300,
               child: TextField(
+                controller: _searchController,
+                onChanged: context.read<AdminController>().updateSearchInput,
                 decoration: InputDecoration(
                   isDense: true,
-                  hintText: 'Buscar usuarios, libros, tokens...',
+                  hintText: 'Buscar libros o usuarios...',
                   prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                  suffixIcon: hasQuery || isSearchPending
+                      ? Padding(
+                          padding: const EdgeInsetsDirectional.only(end: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isSearchPending)
+                                const SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              if (hasQuery)
+                                IconButton(
+                                  tooltip: 'Limpiar busqueda',
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    context
+                                        .read<AdminController>()
+                                        .clearSearch();
+                                  },
+                                  icon: const Icon(
+                                    Icons.close_rounded,
+                                    size: 18,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        )
+                      : null,
                   filled: true,
                   fillColor: const Color(0xFFF3F5FF),
                   border: OutlineInputBorder(
@@ -109,10 +178,10 @@ class AdminTopbar extends StatelessWidget {
             icon: const Icon(Icons.notifications_none_rounded),
           ),
           Tooltip(
-            message: admin.isDarkMode ? 'Modo claro' : 'Modo oscuro',
+            message: isDarkMode ? 'Modo claro' : 'Modo oscuro',
             child: Switch(
-              value: admin.isDarkMode,
-              onChanged: admin.toggleDarkMode,
+              value: isDarkMode,
+              onChanged: context.read<AdminController>().toggleDarkMode,
             ),
           ),
           if (MediaQuery.sizeOf(context).width > 1040) ...[
@@ -142,20 +211,19 @@ class AdminTopbar extends StatelessWidget {
   String _titleFor(AdminSection section) {
     return switch (section) {
       AdminSection.dashboard => 'Dashboard Ejecutivo',
-      AdminSection.users => 'Gestion de Usuarios y Libros',
+      AdminSection.users => 'Gestión de Usuarios y Libros',
       AdminSection.tokens => 'Historial de Tokens',
-      AdminSection.settings => 'Configuracion General',
+      AdminSection.settings => 'Configuración General',
     };
   }
 
   String _subtitleFor(AdminSection section) {
     return switch (section) {
       AdminSection.dashboard => 'Resumen en tiempo real de la plataforma.',
-      AdminSection.users =>
-        'Administra perfiles, permisos, premium y contenido desde un solo lugar.',
       AdminSection.tokens => 'Monitorea movimientos y auditoria de tokens.',
       AdminSection.settings =>
         'Personaliza parametros del panel administrativo.',
+      _ => 'Administra usuarios, perfiles y catalogo de libros.',
     };
   }
 }

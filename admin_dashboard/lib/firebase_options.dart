@@ -24,10 +24,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyB_RjWf8krvaQVQJrIRnemltD4pXimgPrE',
-    appId: '1:404429072054:web:5ae8dae660e35189076817',
+    appId: '1:404429072054:web:33337a33443edef5076817',
     messagingSenderId: '404429072054',
     projectId: 'readlevelproject-6e5d3',
     authDomain: 'readlevelproject-6e5d3.firebaseapp.com',
     storageBucket: 'readlevelproject-6e5d3.firebasestorage.app',
   );
+
 }

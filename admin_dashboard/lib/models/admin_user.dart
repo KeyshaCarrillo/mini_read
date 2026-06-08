@@ -5,6 +5,8 @@ class AdminUser {
   final String uid;
   final String email;
   final String name;
+  final String username;
+  final String nickname;
   final String role;
   final bool isPremium;
   final bool banned;
@@ -16,6 +18,8 @@ class AdminUser {
     required this.uid,
     required this.email,
     required this.name,
+    required this.username,
+    required this.nickname,
     required this.role,
     required this.isPremium,
     required this.banned,
@@ -29,6 +33,9 @@ class AdminUser {
       uid: '${json['uid'] ?? ''}',
       email: '${json['email'] ?? 'sin-correo'}',
       name: '${json['name'] ?? json['displayName'] ?? 'Usuario'}',
+      username: '${json['username'] ?? json['userName'] ?? ''}',
+      nickname:
+          '${json['nickname'] ?? json['nickName'] ?? json['alias'] ?? ''}',
       role: '${json['role'] ?? 'user'}',
       isPremium: json['isPremium'] == true,
       banned: json['banned'] == true || json['disabled'] == true,
@@ -43,6 +50,8 @@ class AdminUser {
       uid: uid,
       email: email,
       name: name,
+      username: username,
+      nickname: nickname,
       role: role ?? this.role,
       isPremium: isPremium ?? this.isPremium,
       banned: banned ?? this.banned,

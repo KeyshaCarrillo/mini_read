@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/admin_user.dart';
@@ -39,6 +41,43 @@ class AdminController extends ChangeNotifier {
   List<TokenTransaction> transactions = [];
   List<IaChat> iaChats = [];
 
+  static const Duration _searchDebounceDuration = Duration(milliseconds: 280);
+  Timer? _searchDebounce;
+  String _searchInput = '';
+  String _searchQuery = '';
+  bool _isSearchPending = false;
+
+  String get searchInput => _searchInput;
+  String get searchQuery => _searchQuery;
+  bool get isSearchPending => _isSearchPending;
+  bool get hasSearchQuery => _searchQuery.isNotEmpty;
+
+  List<Book> get visibleBooks {
+    if (_searchQuery.isEmpty) return books;
+    return books.where((book) {
+      final title = book.title.toLowerCase();
+      final author = book.author.toLowerCase();
+      final category = book.category.toLowerCase();
+      return title.contains(_searchQuery) ||
+          author.contains(_searchQuery) ||
+          category.contains(_searchQuery);
+    }).toList(growable: false);
+  }
+
+  List<AdminUser> get visibleUsers {
+    if (_searchQuery.isEmpty) return users;
+    return users.where((user) {
+      final name = user.name.toLowerCase();
+      final email = user.email.toLowerCase();
+      final username = user.username.toLowerCase();
+      final nickname = user.nickname.toLowerCase();
+      return name.contains(_searchQuery) ||
+          email.contains(_searchQuery) ||
+          username.contains(_searchQuery) ||
+          nickname.contains(_searchQuery);
+    }).toList(growable: false);
+  }
+
   DashboardMetrics get metrics => DashboardMetrics(
     totalUsers: users.length,
     premiumUsers: users.where((user) => user.isPremium).length,
@@ -57,6 +96,43 @@ class AdminController extends ChangeNotifier {
 
   void toggleDarkMode(bool value) {
     isDarkMode = value;
+    notifyListeners();
+  }
+
+  void updateSearchInput(String value) {
+    if (value == _searchInput) return;
+
+    _searchInput = value;
+    final normalized = value.trim().toLowerCase();
+    _searchDebounce?.cancel();
+
+    if (normalized.isEmpty) {
+      final hadQuery = _searchQuery.isNotEmpty || _isSearchPending;
+      _searchQuery = '';
+      _isSearchPending = false;
+      if (hadQuery) {
+        notifyListeners();
+      }
+      return;
+    }
+
+    _isSearchPending = true;
+    notifyListeners();
+    _searchDebounce = Timer(_searchDebounceDuration, () {
+      _searchQuery = normalized;
+      _isSearchPending = false;
+      notifyListeners();
+    });
+  }
+
+  void clearSearch() {
+    if (_searchInput.isEmpty && _searchQuery.isEmpty && !_isSearchPending) {
+      return;
+    }
+    _searchDebounce?.cancel();
+    _searchInput = '';
+    _searchQuery = '';
+    _isSearchPending = false;
     notifyListeners();
   }
 
@@ -96,8 +172,8 @@ class AdminController extends ChangeNotifier {
     await refreshBooks();
   }
 
-  Future<void> deleteBook(String bookId) async {
-    await _api.deleteBook(bookId);
+  Future<void> updateBook(String bookId, Map<String, dynamic> payload) async {
+    await _api.patchBook(bookId, payload);
     await refreshBooks();
   }
 
@@ -119,5 +195,11 @@ class AdminController extends ChangeNotifier {
   void _replaceUser(AdminUser updated) {
     users = [for (final user in users) user.id == updated.id ? updated : user];
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
   }
 }

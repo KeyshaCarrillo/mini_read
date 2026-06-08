@@ -46,14 +46,14 @@ class DashboardScreen extends StatelessWidget {
               title: 'Usuarios Premium',
               value: formatNumber(metrics.premiumUsers),
               trend:
-                  '${metrics.totalUsers == 0 ? 0 : ((metrics.premiumUsers / metrics.totalUsers) * 100).round()}% conversion',
+                  '${metrics.totalUsers == 0 ? 0 : ((metrics.premiumUsers / metrics.totalUsers) * 100).round()}% conversión',
               icon: Icons.star_rounded,
               iconColor: AppColors.secondary,
             ),
             StatCard(
-              title: 'Tokens en Circulacion',
+              title: 'Tokens en Circulación',
               value: formatNumber(metrics.tokensInCirculation),
-              trend: 'Economia activa',
+              trend: 'Economía activa',
               icon: Icons.toll_rounded,
               iconColor: AppColors.primary,
             ),
@@ -86,8 +86,8 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
               _ChartPanel(
-                title: 'Distribucion por Edades',
-                subtitle: 'Segmentacion de la base de usuarios',
+                title: 'Distribución por Edades',
+                subtitle: 'Segmentación de la base de usuarios',
                 child: SizedBox(
                   height: 320,
                   child: AgePieChart(totalUsers: metrics.totalUsers),
@@ -119,7 +119,7 @@ class DashboardScreen extends StatelessWidget {
         const SizedBox(height: 24),
         _ChartPanel(
           title: 'Tendencia Semanal',
-          subtitle: 'Movimiento neto de tokens en los ultimos dias',
+          subtitle: 'Movimiento neto de tokens en los últimos días',
           child: SizedBox(
             height: 260,
             child: TokenLineChart(transactions: admin.transactions),
@@ -575,7 +575,7 @@ class _RecentActivity extends StatelessWidget {
             child: DataTable(
               columns: const [
                 DataColumn(label: Text('Usuario')),
-                DataColumn(label: Text('Accion')),
+                DataColumn(label: Text('Acción')),
                 DataColumn(label: Text('Monto/Token')),
                 DataColumn(label: Text('Fecha')),
               ],

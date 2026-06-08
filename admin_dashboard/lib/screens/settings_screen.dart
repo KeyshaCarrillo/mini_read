@@ -18,7 +18,7 @@ class SettingsScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Configuracion',
+          'Configuración',
           style: Theme.of(
             context,
           ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
@@ -29,7 +29,7 @@ class SettingsScreen extends StatelessWidget {
             final stacked = constraints.maxWidth < 880;
             final cards = [
               _SettingsCard(
-                title: 'Sesion administrativa',
+                title: 'Sesión administrativa',
                 icon: Icons.admin_panel_settings_rounded,
                 children: [
                   _KeyValue(label: 'Usuario', value: auth.displayName),
@@ -44,7 +44,7 @@ class SettingsScreen extends StatelessWidget {
                   OutlinedButton.icon(
                     onPressed: context.read<AuthController>().signOut,
                     icon: const Icon(Icons.logout_rounded),
-                    label: const Text('Cerrar sesion'),
+                    label: const Text('Cerrar sesión'),
                   ),
                 ],
               ),
@@ -55,17 +55,10 @@ class SettingsScreen extends StatelessWidget {
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Dark Mode'),
-                    subtitle: const Text(
-                      'Replica el soporte darkMode del prototipo Stitch.',
-                    ),
                     value: admin.isDarkMode,
                     onChanged: admin.toggleDarkMode,
                   ),
                   const Divider(),
-                  _KeyValue(
-                    label: 'Base URL',
-                    value: 'https://book-api-nu-six.vercel.app',
-                  ),
                   _KeyValue(
                     label: 'Libros cargados',
                     value: '${admin.books.length}',

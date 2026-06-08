@@ -95,7 +95,7 @@ class AdminSidebar extends StatelessWidget {
           ),
           _NavButton(
             icon: Icons.group_rounded,
-            label: 'Gestion de Usuarios',
+            label: 'Gestión de Usuarios',
             selected: admin.section == AdminSection.users,
             onTap: () => _select(context, AdminSection.users),
           ),
@@ -107,7 +107,7 @@ class AdminSidebar extends StatelessWidget {
           ),
           _NavButton(
             icon: Icons.settings_rounded,
-            label: 'Configuracion',
+            label: 'Configuración',
             selected: admin.section == AdminSection.settings,
             onTap: () => _select(context, AdminSection.settings),
           ),

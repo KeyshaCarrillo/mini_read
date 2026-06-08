@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../controllers/auth_controller.dart';
-import '../core/constants.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -583,7 +582,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         textInputAction: TextInputAction.done,
                         onFieldSubmitted: (_) => isChecking ? null : _submit(),
                         decoration: InputDecoration(
-                          hintText: 'Contrasena',
+                          hintText: 'Contraseña',
                           prefixIcon: _inputPrefixIcon(
                             Icons.lock_outline_rounded,
                           ),
@@ -594,8 +593,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               );
                             },
                             tooltip: _obscurePassword
-                                ? 'Mostrar contrasena'
-                                : 'Ocultar contrasena',
+                                ? 'Mostrar contraseña'
+                                : 'Ocultar contraseña',
                             icon: Icon(
                               _obscurePassword
                                   ? Icons.visibility_outlined
@@ -699,51 +698,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF3F6FF),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFD9E1FF)),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.only(top: 2),
-                            child: Icon(
-                              Icons.info_outline_rounded,
-                              size: 18,
-                              color: Color(0xFF3042A8),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text.rich(
-                              TextSpan(
-                                style: textTheme.bodyMedium?.copyWith(
-                                  color: const Color(0xFF3D4568),
-                                  height: 1.35,
-                                ),
-                                children: const [
-                                  TextSpan(
-                                    text: 'Nota: ',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text:
-                                        'si tu usuario aparece como "user" en Firestore, cambia ese campo a "admin" para acceder.',
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
                     ),
                   ],

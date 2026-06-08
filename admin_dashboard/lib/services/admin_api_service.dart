@@ -82,12 +82,13 @@ class AdminApiService {
     return Book.fromJson(Map<String, dynamic>.from(_decode(response) as Map));
   }
 
-  Future<void> deleteBook(String bookId) async {
-    final response = await _client.delete(
+  Future<Book> patchBook(String bookId, Map<String, dynamic> payload) async {
+    final response = await _client.patch(
       _uri('/api/books/$bookId'),
       headers: await _headers(),
+      body: jsonEncode(payload),
     );
-    _decode(response);
+    return Book.fromJson(Map<String, dynamic>.from(_decode(response) as Map));
   }
 
   Future<List<AdminUser>> getUsers() async {
